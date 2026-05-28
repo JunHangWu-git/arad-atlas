@@ -41,6 +41,9 @@ data.db-*
 # vercel
 .vercel
 
+# oh-my-claudecode agent state (not source)
+.omc/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
