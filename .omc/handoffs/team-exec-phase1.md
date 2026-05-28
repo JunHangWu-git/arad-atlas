@@ -1,0 +1,7 @@
+## Handoff: Phase 1 (lib/neople) → Phase 2 (routes + pages)
+
+- **Decided**: API client complete in `lib/neople/`. Helpers: `getServers`; `searchCharacter/getCharacter/getStatus/getEquipment/getAvatar/getCreature/getFlag/getMistAssimilation/getSkillStyle/getBuffEquipment/getBuffAvatar/getBuffCreature` (characters.ts); `getItem` (cache-aside, 30d TTL) + `getJobs`/`getSkills(jobId, jobGrowId)` (items.ts/jobs.ts). All `import "server-only"`. `neopleFetch` retries 5xx, throws `NeopleError` on 4xx, logs warn + returns raw on Zod drift.
+- **Rejected**: getTalisman + getTimeline — both 404 on Global API (probe confirmed). `/characters/[id]/timeline` page must be dropped from nav. Talisman column unused.
+- **Risks**: `getSkills` REQUIRES `jobGrowId` (400 without). `server-only` not resolvable under vitest → test files use `vi.mock("server-only", () => ({}))`. Deep gear blobs are loosely typed (`z.record(z.string(), z.unknown())`) — UI must defensively read nested fields.
+- **Files**: lib/neople/{client,schemas,limiter,portrait,servers,characters,items,jobs}.ts + tests/lib/neople/*.test.ts (42 tests pass). Research: .omc/research/neople-api-probe-2026-05-27.md.
+- **Remaining (Phase 2)**: roster CRUD (add via searchCharacter+persist, list, delete), cached item/jobs/skills passthrough API, RSC pages (landing→roster, character overview+gear+skills+guides, item detail). Refresh endpoint + cron + fame chart data depend on Phase 3 snapshot logic — render "no snapshots yet" states for now. NO timeline page.
