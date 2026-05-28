@@ -52,6 +52,15 @@ export interface StatusSnapshotData {
   capturedAt: number;
 }
 
+export interface SnapshotHealth {
+  ok: boolean;
+  maxAgeMs: number;
+  characterCount: number;
+}
+
+// ok tolerance: 30h, allowing slack on the 24h cron.
+const SNAPSHOT_STALE_THRESHOLD_MS = 30 * 60 * 60 * 1000;
+
 const DEFAULT_LEASE_MS = 60_000;
 
 export async function acquireSnapshotLock(
@@ -311,5 +320,57 @@ export async function getLatestStatusSnapshot(
     status: safeParse(row.status),
     buff: safeParse(row.buff),
     capturedAt: row.capturedAt,
+  };
+}
+
+export async function getAllCharacterIds(): Promise<string[]> {
+  const rows = await db.select({ id: characters.id }).from(characters);
+  return rows.map((r) => r.id);
+}
+
+// Health = staleness of the OLDEST character's latest fame snapshot.
+// A character with zero snapshots is treated as infinitely stale (not ok).
+export async function getSnapshotHealth(): Promise<SnapshotHealth> {
+  const ids = await getAllCharacterIds();
+  const characterCount = ids.length;
+
+  if (characterCount === 0) {
+    return { ok: true, maxAgeMs: 0, characterCount: 0 };
+  }
+
+  // Latest capturedAt per character that HAS a fame snapshot.
+  const latestRows = await db
+    .select({
+      characterFk: fameSnapshot.characterFk,
+      latest: sql<number>`max(${fameSnapshot.capturedAt})`,
+    })
+    .from(fameSnapshot)
+    .groupBy(fameSnapshot.characterFk);
+
+  const latestByChar = new Map<string, number>();
+  for (const row of latestRows) {
+    if (row.characterFk !== null) {
+      latestByChar.set(row.characterFk, row.latest);
+    }
+  }
+
+  // Any character missing a snapshot → stale.
+  const hasMissing = ids.some((id) => !latestByChar.has(id));
+  if (hasMissing) {
+    return {
+      ok: false,
+      maxAgeMs: Number.POSITIVE_INFINITY,
+      characterCount,
+    };
+  }
+
+  const now = Date.now();
+  const oldestLatest = Math.min(...Array.from(latestByChar.values()));
+  const maxAgeMs = now - oldestLatest;
+
+  return {
+    ok: maxAgeMs < SNAPSHOT_STALE_THRESHOLD_MS,
+    maxAgeMs,
+    characterCount,
   };
 }

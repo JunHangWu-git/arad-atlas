@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listRoster } from "@/lib/roster";
+import { getSnapshotHealth } from "@/lib/snapshot";
 import { portraitUrl } from "@/lib/neople/portrait";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -17,11 +19,20 @@ import { AddCharacterForm, DeleteButton } from "./add-character-form";
 export const dynamic = "force-dynamic";
 
 export default async function RosterPage() {
-  const roster = await listRoster();
+  const [roster, health] = await Promise.all([listRoster(), getSnapshotHealth()]);
+
+  const staleLabel = Number.isFinite(health.maxAgeMs)
+    ? `Snapshots stale (${Math.round(health.maxAgeMs / (60 * 60 * 1000))}h ago)`
+    : "Snapshots never captured";
 
   return (
     <main className="max-w-5xl mx-auto p-8 flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Roster</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">Roster</h1>
+        {!health.ok && health.characterCount > 0 && (
+          <Badge variant="destructive">{staleLabel}</Badge>
+        )}
+      </div>
       <AddCharacterForm />
       {roster.length === 0 ? (
         <Card>
