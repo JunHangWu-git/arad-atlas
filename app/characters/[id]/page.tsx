@@ -26,26 +26,18 @@ export default async function CharacterOverviewPage({
       ? new Date(char.updatedAt).toLocaleDateString()
       : "Never";
 
-  // Defensively extract stat rows from status blob
+  // Defensively extract stat rows. The Neople `status` field is itself the
+  // array of { name, value } entries.
   let statRows: Array<{ name: string; value: string }> = [];
-  if (status != null) {
-    const raw = status.status;
-    if (
-      raw != null &&
-      typeof raw === "object" &&
-      "status" in raw &&
-      Array.isArray((raw as { status: unknown }).status)
-    ) {
-      const arr = (raw as { status: unknown[] }).status;
-      statRows = arr.slice(0, 8).flatMap((item) => {
-        if (item == null || typeof item !== "object") return [];
-        const obj = item as Record<string, unknown>;
-        const name = typeof obj["name"] === "string" ? obj["name"] : null;
-        const value = obj["value"] != null ? String(obj["value"]) : null;
-        if (name == null || value == null) return [];
-        return [{ name, value }];
-      });
-    }
+  if (status != null && Array.isArray(status.status)) {
+    statRows = status.status.slice(0, 12).flatMap((item) => {
+      if (item == null || typeof item !== "object") return [];
+      const obj = item as Record<string, unknown>;
+      const name = typeof obj["name"] === "string" ? obj["name"] : null;
+      const value = obj["value"] != null ? String(obj["value"]) : null;
+      if (name == null || value == null) return [];
+      return [{ name, value }];
+    });
   }
 
   return (

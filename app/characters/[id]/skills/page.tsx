@@ -14,30 +14,22 @@ export default async function CharacterSkillsPage({ params }: SkillsPageProps) {
 
   const status = await getLatestStatusSnapshot(id);
 
-  // Defensively extract buff rows from status blob
+  // Defensively extract buff rows. The Neople `buff` field is itself the array
+  // of { name, level, status[] } entries.
   interface BuffRow {
     name: string;
-    value: string;
+    level: string;
   }
   let buffRows: BuffRow[] = [];
-  if (status != null) {
-    const raw = status.buff;
-    if (
-      raw != null &&
-      typeof raw === "object" &&
-      "buff" in raw &&
-      Array.isArray((raw as { buff: unknown }).buff)
-    ) {
-      const arr = (raw as { buff: unknown[] }).buff;
-      buffRows = arr.flatMap((item) => {
-        if (item == null || typeof item !== "object") return [];
-        const obj = item as Record<string, unknown>;
-        const name = typeof obj["name"] === "string" ? obj["name"] : null;
-        const value = obj["value"] != null ? String(obj["value"]) : null;
-        if (name == null || value == null) return [];
-        return [{ name, value }];
-      });
-    }
+  if (status != null && Array.isArray(status.buff)) {
+    buffRows = status.buff.flatMap((item) => {
+      if (item == null || typeof item !== "object") return [];
+      const obj = item as Record<string, unknown>;
+      const name = typeof obj["name"] === "string" ? obj["name"] : null;
+      if (name == null) return [];
+      const level = obj["level"] != null ? String(obj["level"]) : "—";
+      return [{ name, level }];
+    });
   }
 
   return (
@@ -53,7 +45,7 @@ export default async function CharacterSkillsPage({ params }: SkillsPageProps) {
                 {buffRows.map((row) => (
                   <tr key={row.name} className="border-b last:border-0">
                     <td className="py-1 text-muted-foreground">{row.name}</td>
-                    <td className="py-1 text-right font-medium">{row.value}</td>
+                    <td className="py-1 text-right font-medium">Lv {row.level}</td>
                   </tr>
                 ))}
               </tbody>
