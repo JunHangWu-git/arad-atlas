@@ -8,9 +8,14 @@ export default function Home() {
       <p className="text-lg text-muted-foreground">
         Track your DFO characters across servers.
       </p>
-      <Button asChild>
-        <Link href="/roster">View Roster</Link>
-      </Button>
+      <div className="flex gap-3">
+        <Button asChild>
+          <Link href="/roster">View Roster</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/guides">View Guides</Link>
+        </Button>
+      </div>
     </main>
   );
 }

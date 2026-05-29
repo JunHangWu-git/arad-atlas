@@ -32,6 +32,9 @@ export default async function RosterPage() {
         {!health.ok && health.characterCount > 0 && (
           <Badge variant="destructive">{staleLabel}</Badge>
         )}
+        <Link href="/guides" className="ml-auto text-sm text-muted-foreground hover:underline">
+          Guides →
+        </Link>
       </div>
       <AddCharacterForm />
       {roster.length === 0 ? (
@@ -56,6 +59,7 @@ export default async function RosterPage() {
             {roster.map((c) => (
               <TableRow key={c.id}>
                 <TableCell>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Neople CDN portrait; next/image cannot proxy its query params (see plan Risk #8) */}
                   <img
                     src={portraitUrl(c.serverId, c.characterId)}
                     alt={c.characterName}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getRosterCharacter } from "@/lib/roster";
 import { getLatestGearSnapshot } from "@/lib/snapshot";
+import { rarityClass } from "@/lib/rarity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -55,7 +56,7 @@ export default async function CharacterGearPage({ params }: GearPageProps) {
                 {items.map((item, i) => (
                   <tr key={i} className="border-b last:border-0">
                     <td className="py-1 w-32 text-muted-foreground">{item.slotName}</td>
-                    <td className="py-1">{item.itemName}</td>
+                    <td className={`py-1 ${rarityClass(item.itemRarity)}`}>{item.itemName}</td>
                     <td className="py-1 text-right">
                       {item.itemRarity && (
                         <Badge variant="secondary">{item.itemRarity}</Badge>

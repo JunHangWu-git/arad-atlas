@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getRosterCharacter } from "@/lib/roster";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AddGuideForm, RemoveGuideButton } from "./add-guide-form";
 
 interface GuidesPageProps {
   params: Promise<{ id: string }>;
@@ -17,11 +18,12 @@ export default async function CharacterGuidesPage({ params }: GuidesPageProps) {
         <CardHeader>
           <CardTitle>Guides</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <AddGuideForm characterId={id} />
           {char.guideUrls.length > 0 ? (
             <ul className="space-y-2">
               {char.guideUrls.map((url) => (
-                <li key={url}>
+                <li key={url} className="flex items-center">
                   <a
                     href={url}
                     target="_blank"
@@ -30,6 +32,7 @@ export default async function CharacterGuidesPage({ params }: GuidesPageProps) {
                   >
                     {url}
                   </a>
+                  <RemoveGuideButton characterId={id} url={url} />
                 </li>
               ))}
             </ul>

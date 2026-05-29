@@ -29,6 +29,7 @@ export default async function CharacterLayout({
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- Neople CDN portrait; next/image cannot proxy its query params (see plan Risk #8) */}
         <img
           src={portraitUrl(char.serverId, char.characterId)}
           width={64}

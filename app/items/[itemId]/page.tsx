@@ -1,4 +1,5 @@
 import { getItem } from "@/lib/neople/items";
+import { rarityClass } from "@/lib/rarity";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -25,7 +26,7 @@ export default async function ItemPage({ params }: PageProps) {
     <main className="max-w-2xl mx-auto p-8">
       <Card>
         <CardHeader className="flex flex-row items-center gap-3">
-          <CardTitle className="text-2xl">{item.itemName}</CardTitle>
+          <CardTitle className={`text-2xl ${rarityClass(item.itemRarity)}`}>{item.itemName}</CardTitle>
           <Badge>{item.itemRarity}</Badge>
         </CardHeader>
         <CardContent>

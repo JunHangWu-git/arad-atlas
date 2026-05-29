@@ -162,3 +162,74 @@ export async function addCharacter(
 export async function deleteCharacter(id: string): Promise<void> {
   await db.delete(characters).where(eq(characters.id, id));
 }
+
+function isValidHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+export async function addGuideUrl(
+  id: string,
+  url: string,
+): Promise<RosterCharacter> {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new Error("Guide URL must not be blank.");
+  }
+  if (!isValidHttpUrl(trimmed)) {
+    throw new Error("Guide URL must be a valid http or https URL.");
+  }
+
+  const char = await getRosterCharacter(id);
+  if (!char) {
+    throw new Error(`Character not found: ${id}`);
+  }
+
+  const existing = new Set(char.guideUrls);
+  if (existing.has(trimmed)) {
+    return char;
+  }
+
+  const updated = [...char.guideUrls, trimmed];
+  await db
+    .update(characters)
+    .set({ guideUrls: JSON.stringify(updated), updatedAt: Date.now() })
+    .where(eq(characters.id, id));
+
+  const saved = await getRosterCharacter(id);
+  if (!saved) {
+    throw new Error(`Failed to retrieve character after update: ${id}`);
+  }
+  return saved;
+}
+
+export async function removeGuideUrl(
+  id: string,
+  url: string,
+): Promise<RosterCharacter> {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new Error("Guide URL must not be blank.");
+  }
+
+  const char = await getRosterCharacter(id);
+  if (!char) {
+    throw new Error(`Character not found: ${id}`);
+  }
+
+  const updated = char.guideUrls.filter((u) => u !== trimmed);
+  await db
+    .update(characters)
+    .set({ guideUrls: JSON.stringify(updated), updatedAt: Date.now() })
+    .where(eq(characters.id, id));
+
+  const saved = await getRosterCharacter(id);
+  if (!saved) {
+    throw new Error(`Failed to retrieve character after update: ${id}`);
+  }
+  return saved;
+}

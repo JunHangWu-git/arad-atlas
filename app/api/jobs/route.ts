@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { NeopleError } from "@/lib/neople/client";
 import { getJobs } from "@/lib/neople/jobs";
 
-export async function GET(_request: NextRequest): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     const data = await getJobs();
     return NextResponse.json({ success: true, data });

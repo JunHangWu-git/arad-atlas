@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
+/* Dark is the default (DFO aesthetic). No light override. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0c;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -10,13 +11,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Item rarity color tokens — generates text-rarity-* and bg-rarity-* utilities */
+  --color-rarity-common: #9ca3af;
+  --color-rarity-uncommon: #4ade80;
+  --color-rarity-rare: #a855f7;
+  --color-rarity-unique: #f472b6;
+  --color-rarity-epic: #facc15;
+  --color-rarity-legendary: #fb923c;
+  --color-rarity-mythic: #ef4444;
+  --color-rarity-chronicle: #22d3ee;
 }
 
 body {

@@ -36,6 +36,7 @@ describe("neopleFetch", () => {
   });
 
   it("injects the apikey and encodes query params", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- param typed so mock.calls[0][0] is indexable below
     const fetchImpl = vi.fn(async (_url: unknown) => jsonResponse({ rows: [] }));
     await neopleFetch(
       "/df/servers/cain/characters",

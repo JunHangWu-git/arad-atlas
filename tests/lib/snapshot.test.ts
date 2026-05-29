@@ -15,18 +15,6 @@ const insertStatusSpy = vi.fn();
 const updateCharSpy = vi.fn();
 const deleteLockSpy = vi.fn();
 
-// Drizzle query builder chains are deeply nested; build minimal fakes.
-function makeSelectChain(getRows: () => unknown[]) {
-  const chain = {
-    from: () => chain,
-    where: () => chain,
-    orderBy: () => chain,
-    limit: async () => getRows(),
-    select: () => chain,
-  };
-  return chain;
-}
-
 const txMock = {
   insert: (table: unknown) => ({
     values: (vals: unknown) => {
