@@ -323,6 +323,34 @@ export async function getLatestStatusSnapshot(
   };
 }
 
+// Latest fame value per character, keyed by characters.id. Characters with no
+// fame snapshot are simply absent from the map (callers default to null).
+// Single grouped+joined query — never per-character (avoids N+1 on the grid).
+export async function getLatestFameByCharacter(): Promise<Map<string, number | null>> {
+  const result = await db.run(
+    sql`
+      SELECT f.character_fk AS characterFk, f.fame AS fame
+      FROM fame_snapshot f
+      JOIN (
+        SELECT character_fk, MAX(captured_at) AS mx
+        FROM fame_snapshot
+        GROUP BY character_fk
+      ) latest
+        ON f.character_fk = latest.character_fk
+       AND f.captured_at = latest.mx
+    `,
+  );
+
+  const map = new Map<string, number | null>();
+  for (const row of result.rows ?? []) {
+    const r = row as { characterFk?: unknown; fame?: unknown };
+    if (typeof r.characterFk === "string") {
+      map.set(r.characterFk, typeof r.fame === "number" ? r.fame : null);
+    }
+  }
+  return map;
+}
+
 export async function getAllCharacterIds(): Promise<string[]> {
   const rows = await db.select({ id: characters.id }).from(characters);
   return rows.map((r) => r.id);

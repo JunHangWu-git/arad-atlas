@@ -1,14 +1,45 @@
 @import "tailwindcss";
 
-/* Dark is the default (DFO aesthetic). No light override. */
+/* Dark is the default (DFO "Arcade" aesthetic). No light override. */
 :root {
-  --background: #0a0a0c;
-  --foreground: #ededed;
+  --background: #0e1016;
+  --foreground: #e7ecf5;
+
+  /* Arcade surface + line palette (raw vars for arbitrary-value classes) */
+  --panel: #161a23;
+  --panel-2: #1c212d;
+  --line: #262d3b;
+  --mute: #8a93a6;
+  --faint: #5b6477;
+
+  /* Fame accent + illustrative fame-tier colors */
+  --fame: #f2994a;
+  --tier-fine: #46b1ff;
+  --tier-epic: #c084fc;
+  --tier-legend: #ff5d5d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* shadcn-referenced tokens, themed to the arcade palette */
+  --color-card: var(--panel);
+  --color-card-foreground: var(--foreground);
+  --color-muted: var(--panel-2);
+  --color-muted-foreground: var(--mute);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--tier-fine);
+  --color-destructive: var(--tier-legend);
+  --color-destructive-foreground: #ffffff;
+
+  /* expose arcade accents as utilities (text-fame, border-tier-epic, ...) */
+  --color-fame: var(--fame);
+  --color-tier-fine: var(--tier-fine);
+  --color-tier-epic: var(--tier-epic);
+  --color-tier-legend: var(--tier-legend);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -23,8 +54,15 @@
   --color-rarity-chronicle: #22d3ee;
 }
 
+/* Default every border to the arcade line color (shadcn relies on this). */
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

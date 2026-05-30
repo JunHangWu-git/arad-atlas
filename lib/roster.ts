@@ -4,6 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { characters } from "@/db/schema";
 import { searchCharacter, getCharacter } from "@/lib/neople/characters";
+import { getLatestFameByCharacter } from "@/lib/snapshot";
 
 export interface RosterCharacter {
   id: string;
@@ -17,6 +18,7 @@ export interface RosterCharacter {
   level: number | null;
   guildName: string | null;
   guideUrls: string[];
+  fame: number | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -49,6 +51,7 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
     level: row.level ?? null,
     guildName: row.guildName ?? null,
     guideUrls: parseGuideUrls(row.guideUrls),
+    fame: null,
     createdAt: row.createdAt ?? null,
     updatedAt: row.updatedAt ?? null,
   };
@@ -60,6 +63,16 @@ export async function listRoster(): Promise<RosterCharacter[]> {
     .from(characters)
     .orderBy(desc(characters.createdAt));
   return rows.map(rowToRosterCharacter);
+}
+
+// Roster plus latest fame per character, for the main-page card grid. Keeps
+// listRoster() untouched so other callers are unaffected.
+export async function listRosterWithFame(): Promise<RosterCharacter[]> {
+  const [roster, fameByChar] = await Promise.all([
+    listRoster(),
+    getLatestFameByCharacter(),
+  ]);
+  return roster.map((c) => ({ ...c, fame: fameByChar.get(c.id) ?? null }));
 }
 
 export async function getRosterCharacter(id: string): Promise<RosterCharacter | null> {
