@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { characters } from "@/db/schema";
 import { searchCharacter, getCharacter } from "@/lib/neople/characters";
@@ -19,6 +19,7 @@ export interface RosterCharacter {
   level: number | null;
   guildName: string | null;
   guideUrls: string[];
+  position: number | null;
   fame: number | null;
   createdAt: number | null;
   updatedAt: number | null;
@@ -53,6 +54,7 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
     level: row.level ?? null,
     guildName: row.guildName ?? null,
     guideUrls: parseGuideUrls(row.guideUrls),
+    position: row.position ?? null,
     fame: null,
     createdAt: row.createdAt ?? null,
     updatedAt: row.updatedAt ?? null,
@@ -60,10 +62,16 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
 }
 
 export async function listRoster(): Promise<RosterCharacter[]> {
+  // Manual board order: positioned cards first (asc), unpositioned (null)
+  // last, with createdAt-desc as a stable tiebreak.
   const rows = await db
     .select()
     .from(characters)
-    .orderBy(desc(characters.createdAt));
+    .orderBy(
+      sql`${characters.position} is null`,
+      characters.position,
+      desc(characters.createdAt),
+    );
   return rows.map(rowToRosterCharacter);
 }
 
@@ -139,6 +147,13 @@ export async function addCharacter(
 
   const now = Date.now();
 
+  // New characters append to the end of the manual board order. Existing rows
+  // keep their position (not in the onConflictDoUpdate set below).
+  const [{ max: maxPosition }] = await db
+    .select({ max: sql<number | null>`max(${characters.position})` })
+    .from(characters);
+  const nextPosition = (maxPosition ?? -1) + 1;
+
   await db
     .insert(characters)
     .values({
@@ -154,6 +169,7 @@ export async function addCharacter(
       level: enriched.level,
       guildName: enriched.guildName,
       guideUrls: "[]",
+      position: nextPosition,
       createdAt: now,
       updatedAt: now,
     })
@@ -181,6 +197,22 @@ export async function addCharacter(
 
 export async function deleteCharacter(id: string): Promise<void> {
   await db.delete(characters).where(eq(characters.id, id));
+}
+
+// Persist a manual board order: each id's index in `orderedIds` becomes its
+// `position`. Ids not present are left untouched — they keep their old position
+// value and may interleave. Callers should send the full roster id list.
+export async function reorderCharacters(orderedIds: string[]): Promise<void> {
+  if (orderedIds.length === 0) return;
+  const now = Date.now();
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < orderedIds.length; i += 1) {
+      await tx
+        .update(characters)
+        .set({ position: i, updatedAt: now })
+        .where(eq(characters.id, orderedIds[i]));
+    }
+  });
 }
 
 function isValidHttpUrl(url: string): boolean {

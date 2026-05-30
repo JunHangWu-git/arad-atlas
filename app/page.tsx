@@ -4,7 +4,7 @@ import { getSnapshotHealth } from "@/lib/snapshot";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AddCharacterForm } from "./roster/add-character-form";
-import { CharacterCard } from "./character-card";
+import { RosterGrid } from "./roster-grid";
 import { RefreshAllButton } from "./refresh-all-button";
 
 // Per-deployment live data backed by the local DB — never prerender at build
@@ -70,11 +70,7 @@ export default async function Home() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-5">
-          {roster.map((c) => (
-            <CharacterCard key={c.id} character={c} />
-          ))}
-        </div>
+        <RosterGrid roster={roster} />
       )}
     </main>
   );

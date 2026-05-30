@@ -23,6 +23,7 @@ export const characters = sqliteTable(
     level: integer("level"),
     guildName: text("guild_name"),
     guideUrls: text("guide_urls"), // JSON-encoded string[]
+    position: integer("position"), // manual board sort order (asc); null = unsorted
     createdAt: integer("created_at"), // unix ms
     updatedAt: integer("updated_at"), // unix ms
   },

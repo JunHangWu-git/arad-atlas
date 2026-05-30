@@ -15,6 +15,13 @@
       "when": 1780106276444,
       "tag": "0001_soft_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780118014649,
+      "tag": "0002_left_eternals",
+      "breakpoints": true
     }
   ]
 }
