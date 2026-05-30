@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AddCharacterForm } from "./roster/add-character-form";
 import { CharacterCard } from "./character-card";
+import { RefreshAllButton } from "./refresh-all-button";
 
 // Per-deployment live data backed by the local DB — never prerender at build
 // time (the DB/table may not exist during build).
@@ -43,12 +44,15 @@ export default async function Home() {
         {!health.ok && health.characterCount > 0 && (
           <Badge variant="destructive">{staleLabel}</Badge>
         )}
-        <Link
-          href="/guides"
-          className="ml-auto text-sm text-muted-foreground hover:underline"
-        >
-          Guides →
-        </Link>
+        <div className="ml-auto flex items-center gap-4">
+          {roster.length > 0 && <RefreshAllButton />}
+          <Link
+            href="/guides"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            Guides →
+          </Link>
+        </div>
       </div>
 
       {roster.length > 0 && (

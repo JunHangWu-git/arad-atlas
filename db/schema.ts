@@ -19,6 +19,7 @@ export const characters = sqliteTable(
     jobId: text("job_id"),
     jobGrowId: text("job_grow_id"),
     jobName: text("job_name"),
+    jobGrowName: text("job_grow_name"),
     level: integer("level"),
     guildName: text("guild_name"),
     guideUrls: text("guide_urls"), // JSON-encoded string[]

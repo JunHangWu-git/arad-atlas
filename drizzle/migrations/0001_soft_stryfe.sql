@@ -1,0 +1,1 @@
+ALTER TABLE `characters` ADD `job_grow_name` text;

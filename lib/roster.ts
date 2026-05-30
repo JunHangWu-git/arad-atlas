@@ -15,6 +15,7 @@ export interface RosterCharacter {
   jobId: string | null;
   jobGrowId: string | null;
   jobName: string | null;
+  jobGrowName: string | null;
   level: number | null;
   guildName: string | null;
   guideUrls: string[];
@@ -48,6 +49,7 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
     jobId: row.jobId ?? null,
     jobGrowId: row.jobGrowId ?? null,
     jobName: row.jobName ?? null,
+    jobGrowName: row.jobGrowName ?? null,
     level: row.level ?? null,
     guildName: row.guildName ?? null,
     guideUrls: parseGuideUrls(row.guideUrls),
@@ -105,6 +107,7 @@ export async function addCharacter(
     jobId: string | null;
     jobGrowId: string | null;
     jobName: string | null;
+    jobGrowName: string | null;
     level: number | null;
     characterName: string;
   } = {
@@ -113,6 +116,7 @@ export async function addCharacter(
     jobId: searchRow.jobId ?? null,
     jobGrowId: searchRow.jobGrowId ?? null,
     jobName: searchRow.jobName ?? null,
+    jobGrowName: searchRow.jobGrowName ?? null,
     level: searchRow.level ?? null,
     characterName: searchRow.characterName,
   };
@@ -125,6 +129,7 @@ export async function addCharacter(
       jobId: base.jobId ?? null,
       jobGrowId: base.jobGrowId ?? null,
       jobName: base.jobName ?? null,
+      jobGrowName: base.jobGrowName ?? null,
       level: base.level ?? null,
       characterName: base.characterName,
     };
@@ -145,6 +150,7 @@ export async function addCharacter(
       jobId: enriched.jobId,
       jobGrowId: enriched.jobGrowId,
       jobName: enriched.jobName,
+      jobGrowName: enriched.jobGrowName,
       level: enriched.level,
       guildName: enriched.guildName,
       guideUrls: "[]",
@@ -159,6 +165,7 @@ export async function addCharacter(
         jobId: enriched.jobId,
         jobGrowId: enriched.jobGrowId,
         jobName: enriched.jobName,
+        jobGrowName: enriched.jobGrowName,
         level: enriched.level,
         guildName: enriched.guildName,
         updatedAt: now,

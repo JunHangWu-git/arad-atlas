@@ -239,6 +239,9 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
           level: (baseVal as { level?: number } | null)?.level ?? char.level,
           jobName:
             (baseVal as { jobName?: string } | null)?.jobName ?? char.jobName,
+          jobGrowName:
+            (baseVal as { jobGrowName?: string } | null)?.jobGrowName ??
+            char.jobGrowName,
           adventureName:
             (baseVal as { adventureName?: string } | null)?.adventureName ??
             char.adventureName,

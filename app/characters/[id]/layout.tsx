@@ -40,7 +40,11 @@ export default async function CharacterLayout({
         <div>
           <h1 className="text-2xl font-bold">{char.characterName}</h1>
           <p className="text-sm text-muted-foreground">
-            {[char.jobName, char.level != null ? `Lv ${char.level}` : null]
+            {[
+              char.jobGrowName ?? char.jobName,
+              char.jobGrowName && char.jobName ? char.jobName : null,
+              char.level != null ? `Lv ${char.level}` : null,
+            ]
               .filter(Boolean)
               .join(" · ")}
           </p>

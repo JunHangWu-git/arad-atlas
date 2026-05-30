@@ -40,9 +40,16 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
             <span className="text-6xl font-bold text-white/90 drop-shadow">
               {initial}
             </span>
-            {c.jobName && (
-              <span className="text-base font-medium text-white/70">
-                {c.jobName}
+            {(c.jobGrowName ?? c.jobName) && (
+              <span className="flex flex-col items-center leading-tight">
+                <span className="text-base font-medium text-white/80">
+                  {c.jobGrowName ?? c.jobName}
+                </span>
+                {c.jobGrowName && c.jobName && (
+                  <span className="text-xs font-normal text-white/50">
+                    {c.jobName}
+                  </span>
+                )}
               </span>
             )}
           </div>
