@@ -1,9 +1,17 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRosterCharacter } from "@/lib/roster";
-import { getFameHistory, getLatestStatusSnapshot } from "@/lib/snapshot";
+import {
+  getFameHistory,
+  getLatestStatusSnapshot,
+  getLatestGearSnapshot,
+} from "@/lib/snapshot";
+import { parseEquipment, parseAvatars, parseCreature } from "@/lib/gear";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshButton } from "./refresh-button";
 import { FameChart } from "./fame-chart";
+import { EquipmentList } from "./equipment-list";
+import { ItemIconStrip } from "./item-icons";
 
 interface OverviewPageProps {
   params: Promise<{ id: string }>;
@@ -16,10 +24,16 @@ export default async function CharacterOverviewPage({
   const char = await getRosterCharacter(id);
   if (!char) notFound();
 
-  const [fame, status] = await Promise.all([
+  const [fame, status, gear] = await Promise.all([
     getFameHistory(id),
     getLatestStatusSnapshot(id),
+    getLatestGearSnapshot(id),
   ]);
+
+  const equipment = parseEquipment(gear?.equipment);
+  const avatars = parseAvatars(gear?.avatar);
+  const creature = parseCreature(gear?.creature);
+  const sidekicks = creature ? [creature, ...avatars] : avatars;
 
   const lastRefreshed =
     char.updatedAt != null
@@ -48,6 +62,32 @@ export default async function CharacterOverviewPage({
         </p>
         <RefreshButton id={id} />
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Equipment</CardTitle>
+          <Link
+            href={`/characters/${id}/gear`}
+            className="text-sm font-normal text-muted-foreground hover:underline"
+          >
+            View all →
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <EquipmentList rows={equipment.slice(0, 6)} />
+        </CardContent>
+      </Card>
+
+      {sidekicks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Avatar &amp; Creature</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ItemIconStrip items={sidekicks} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

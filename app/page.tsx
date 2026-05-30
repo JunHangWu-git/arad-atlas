@@ -21,16 +21,11 @@ export default async function Home() {
     ? `Snapshots stale (${Math.round(health.maxAgeMs / (60 * 60 * 1000))}h ago)`
     : "Snapshots never captured";
 
-  // Roster summary stats for the meta-row (fame/level may be null per char).
-  const fameFmt = new Intl.NumberFormat("en-US");
-  const totalFame = roster.reduce((t, c) => t + (c.fame ?? 0), 0);
-  const levels = roster
-    .map((c) => c.level)
-    .filter((l): l is number => l != null);
-  const avgLevel =
-    levels.length > 0
-      ? Math.round(levels.reduce((t, l) => t + l, 0) / levels.length)
-      : 0;
+  // Explorer Club (account) name — shared across a roster, so use the first
+  // non-empty adventureName. Falls back to a generic title when unknown.
+  const accountName =
+    roster.find((c) => c.adventureName && c.adventureName.trim() !== "")
+      ?.adventureName ?? "Your Characters";
 
   return (
     <main className="w-full px-8 py-8 flex flex-col gap-6">
@@ -40,7 +35,7 @@ export default async function Home() {
           style={{ backgroundColor: "var(--fame)" }}
           aria-hidden
         />
-        <h1 className="text-3xl font-bold tracking-tight">Your Characters</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{accountName}</h1>
         {!health.ok && health.characterCount > 0 && (
           <Badge variant="destructive">{staleLabel}</Badge>
         )}
@@ -62,16 +57,6 @@ export default async function Home() {
             <b className="font-mono font-semibold text-foreground">
               {roster.length}
             </b>
-          </span>
-          <span>
-            Total fame{" "}
-            <b className="font-mono font-semibold text-foreground">
-              {fameFmt.format(totalFame)}
-            </b>
-          </span>
-          <span>
-            Avg level{" "}
-            <b className="font-mono font-semibold text-foreground">{avgLevel}</b>
           </span>
         </div>
       )}
