@@ -9,6 +9,7 @@ import {
   snapshotLock,
 } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
+import { parseEquipment, type ItemIcon } from "@/lib/gear";
 import {
   getCharacter,
   getStatus,
@@ -350,6 +351,42 @@ export async function getLatestFameByCharacter(): Promise<Map<string, number | n
     if (typeof r.characterFk === "string") {
       map.set(r.characterFk, typeof r.fame === "number" ? r.fame : null);
     }
+  }
+  return map;
+}
+
+// Latest equipment icon set per character, keyed by characters.id. Mirrors
+// getLatestFameByCharacter: one grouped query (never per-character) to dodge an
+// N+1 on the grid. Characters without a gear snapshot are absent from the map.
+export async function getLatestEquipmentByCharacter(): Promise<
+  Map<string, ItemIcon[]>
+> {
+  const result = await db.run(
+    sql`
+      SELECT g.character_fk AS characterFk, g.equipment AS equipment
+      FROM gear_snapshot g
+      JOIN (
+        SELECT character_fk, MAX(captured_at) AS mx
+        FROM gear_snapshot
+        GROUP BY character_fk
+      ) latest
+        ON g.character_fk = latest.character_fk
+       AND g.captured_at = latest.mx
+    `,
+  );
+
+  const map = new Map<string, ItemIcon[]>();
+  for (const row of result.rows ?? []) {
+    const r = row as { characterFk?: unknown; equipment?: unknown };
+    if (typeof r.characterFk !== "string") continue;
+    const blob = safeParse(typeof r.equipment === "string" ? r.equipment : null);
+    const icons: ItemIcon[] = parseEquipment(blob).map((e) => ({
+      itemId: e.itemId,
+      itemName: e.itemName,
+      itemRarity: e.itemRarity,
+      slotName: e.slotName,
+    }));
+    map.set(r.characterFk, icons);
   }
   return map;
 }

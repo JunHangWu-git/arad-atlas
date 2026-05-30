@@ -29,17 +29,18 @@ export default async function Home() {
 
   return (
     <main className="w-full px-8 py-8 flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span
-          className="inline-block size-3 rounded-sm"
-          style={{ backgroundColor: "var(--fame)" }}
-          aria-hidden
-        />
-        <h1 className="text-3xl font-bold tracking-tight">{accountName}</h1>
+      <div className="flex flex-wrap items-center gap-4">
+        <h1
+          className="text-4xl font-bold tracking-wide"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {accountName}
+        </h1>
         {!health.ok && health.characterCount > 0 && (
           <Badge variant="destructive">{staleLabel}</Badge>
         )}
         <div className="ml-auto flex items-center gap-4">
+          <AddCharacterForm />
           {roster.length > 0 && <RefreshAllButton />}
           <Link
             href="/guides"
@@ -49,19 +50,6 @@ export default async function Home() {
           </Link>
         </div>
       </div>
-
-      {roster.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-border py-2.5 text-xs text-muted-foreground">
-          <span>
-            Characters{" "}
-            <b className="font-mono font-semibold text-foreground">
-              {roster.length}
-            </b>
-          </span>
-        </div>
-      )}
-
-      <AddCharacterForm />
 
       {roster.length === 0 ? (
         <Card>

@@ -4,7 +4,11 @@ import { eq, desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { characters } from "@/db/schema";
 import { searchCharacter, getCharacter } from "@/lib/neople/characters";
-import { getLatestFameByCharacter } from "@/lib/snapshot";
+import {
+  getLatestFameByCharacter,
+  getLatestEquipmentByCharacter,
+} from "@/lib/snapshot";
+import type { ItemIcon } from "@/lib/gear";
 
 export interface RosterCharacter {
   id: string;
@@ -21,6 +25,8 @@ export interface RosterCharacter {
   guideUrls: string[];
   position: number | null;
   fame: number | null;
+  /** Latest equipped-gear icons, for the card frame. Empty until snapshotted. */
+  equipment: ItemIcon[];
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -56,6 +62,7 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
     guideUrls: parseGuideUrls(row.guideUrls),
     position: row.position ?? null,
     fame: null,
+    equipment: [],
     createdAt: row.createdAt ?? null,
     updatedAt: row.updatedAt ?? null,
   };
@@ -78,11 +85,16 @@ export async function listRoster(): Promise<RosterCharacter[]> {
 // Roster plus latest fame per character, for the main-page card grid. Keeps
 // listRoster() untouched so other callers are unaffected.
 export async function listRosterWithFame(): Promise<RosterCharacter[]> {
-  const [roster, fameByChar] = await Promise.all([
+  const [roster, fameByChar, equipByChar] = await Promise.all([
     listRoster(),
     getLatestFameByCharacter(),
+    getLatestEquipmentByCharacter(),
   ]);
-  return roster.map((c) => ({ ...c, fame: fameByChar.get(c.id) ?? null }));
+  return roster.map((c) => ({
+    ...c,
+    fame: fameByChar.get(c.id) ?? null,
+    equipment: equipByChar.get(c.id) ?? [],
+  }));
 }
 
 export async function getRosterCharacter(id: string): Promise<RosterCharacter | null> {
