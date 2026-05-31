@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getRosterCharacter } from "@/lib/roster";
-import { getLatestGearSnapshot, getFameHistory } from "@/lib/snapshot";
-import { parseEquipment, parseEquipmentSet } from "@/lib/gear";
+import { getLatestGearSnapshot } from "@/lib/snapshot";
+import { parseEquipmentSet } from "@/lib/gear";
 import { CharHero } from "./char-hero";
 import { TabNav } from "./tab-nav";
 
@@ -19,14 +19,8 @@ export default async function CharacterLayout({
   const char = await getRosterCharacter(id);
   if (!char) notFound();
 
-  const [gear, fame] = await Promise.all([
-    getLatestGearSnapshot(id),
-    getFameHistory(id, 1),
-  ]);
-
-  const equipment = parseEquipment(gear?.equipment);
+  const gear = await getLatestGearSnapshot(id);
   const set = parseEquipmentSet(gear?.equipment);
-  const latestFame = fame.length > 0 ? fame[fame.length - 1].fame : null;
 
   const baseHref = `/characters/${id}`;
 
@@ -45,7 +39,7 @@ export default async function CharacterLayout({
         Characters
       </Link>
 
-      <CharHero char={char} equipment={equipment} set={set} fame={latestFame} />
+      <CharHero char={char} set={set} />
 
       <TabNav baseHref={baseHref} />
 
