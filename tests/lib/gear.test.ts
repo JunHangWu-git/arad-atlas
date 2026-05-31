@@ -19,6 +19,7 @@ function row(partial: Partial<EquipmentRow> & { slotName: string }): EquipmentRo
     amplificationName: null,
     fusionName: null,
     fusionRarity: null,
+    fusionItemId: null,
     fusionEffect: null,
     enchant: [],
     ...partial,

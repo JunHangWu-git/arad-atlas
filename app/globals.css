@@ -48,14 +48,14 @@
   --font-mono: var(--font-geist-mono);
 
   /* Item rarity color tokens — generates text-rarity-* and bg-rarity-* utilities */
-  --color-rarity-common: #9ca3af;
-  --color-rarity-uncommon: #4ade80;
-  --color-rarity-rare: #a855f7;
+  --color-rarity-common: #46b1ff; /* blue */
+  --color-rarity-uncommon: #e8edf5; /* white */
+  --color-rarity-rare: #a855f7; /* purple */
   --color-rarity-unique: #f472b6;
-  --color-rarity-epic: #facc15;
-  --color-rarity-legendary: #fb923c;
+  --color-rarity-epic: #facc15; /* gold / yellow */
+  --color-rarity-legendary: #fb923c; /* orange */
   --color-rarity-mythic: #ef4444;
-  --color-rarity-chronicle: #22d3ee;
+  --color-rarity-chronicle: #2dd4bf; /* Primeval — teal / turquoise */
 }
 
 /* Default every border to the arcade line color (shadcn relies on this). */

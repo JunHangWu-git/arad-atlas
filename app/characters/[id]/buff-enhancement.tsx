@@ -1,21 +1,44 @@
 import { itemImageUrl } from "@/lib/neople/portrait";
 import { rarityClass } from "@/lib/rarity";
-import type { BuffEnhancement as BuffEnhancementData } from "@/lib/gear";
+import type {
+  BuffEnhancement as BuffEnhancementData,
+  AvatarSlot,
+  ItemIcon,
+} from "@/lib/gear";
+import { AvatarCard } from "./avatar-card";
 
 interface BuffEnhancementPanelProps {
   data: BuffEnhancementData;
+  avatars: AvatarSlot[];
+  creatures: ItemIcon[];
+}
+
+/** Small section header used across the buff-enhancement panel. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </p>
+  );
 }
 
 /**
- * dfogang "Buff Enhancement" panel: the buff skill name + level over the list of
- * equipped buff equipment. Degrades to an empty-state message when no buff data
- * has been snapshotted.
+ * dfogang "Buff Enhancement" panel: the buff skill name + level, then the
+ * equipped buff equipment, buff avatars, and buff creature — each row boxed in
+ * its own darker cell. Degrades to an empty-state message when nothing buff-
+ * related has been snapshotted.
  */
-export function BuffEnhancementPanel({ data }: BuffEnhancementPanelProps) {
+export function BuffEnhancementPanel({
+  data,
+  avatars,
+  creatures,
+}: BuffEnhancementPanelProps) {
   const hasSkill = data.skillName != null;
   const hasEquipment = data.equipment.length > 0;
+  const hasAvatars = avatars.length > 0;
+  const hasCreatures = creatures.length > 0;
 
-  if (!hasSkill && !hasEquipment) {
+  if (!hasSkill && !hasEquipment && !hasAvatars && !hasCreatures) {
     return (
       <p className="text-sm text-muted-foreground">
         No buff snapshot yet — refresh to capture buff enhancement.
@@ -24,7 +47,7 @@ export function BuffEnhancementPanel({ data }: BuffEnhancementPanelProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {hasSkill && (
         <div className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
           <div
@@ -38,8 +61,15 @@ export function BuffEnhancementPanel({ data }: BuffEnhancementPanelProps) {
             <p className="truncate font-semibold text-tier-epic">{data.skillName}</p>
           </div>
           {data.level != null && (
-            <span className="shrink-0 font-mono text-sm font-semibold text-muted-foreground">
-              Lv.{data.level}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="font-mono text-sm font-semibold text-muted-foreground">
+                Lv.{data.level}
+              </span>
+              {data.level >= 20 && (
+                <span className="rounded bg-tier-legend/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-tier-legend">
+                  Max
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -47,20 +77,59 @@ export function BuffEnhancementPanel({ data }: BuffEnhancementPanelProps) {
 
       {hasEquipment && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Equipped Buff Equipment
-          </p>
-          <ul className="space-y-1.5">
+          <GroupLabel>Equipped Buff Equipment</GroupLabel>
+          <ul className="space-y-1">
             {data.equipment.map((item, i) => (
-              <li key={item.itemId ?? i} className="flex items-center gap-2.5">
+              <li
+                key={item.itemId ?? i}
+                className="flex items-center gap-2 rounded-md bg-black/20 px-2 py-1.5"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element -- Neople item CDN (see portrait.ts) */}
                 <img
                   src={item.itemId ? itemImageUrl(item.itemId) : ""}
-                  width={24}
-                  height={24}
+                  width={22}
+                  height={22}
                   alt=""
                   loading="lazy"
-                  className="size-6 shrink-0 rounded border border-border bg-black/20"
+                  className="size-[22px] shrink-0 rounded border border-border bg-black/20"
+                />
+                <span className={`truncate text-xs ${rarityClass(item.itemRarity)}`}>
+                  {item.itemName}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {hasAvatars && (
+        <div className="space-y-2">
+          <GroupLabel>Equipped Buff Avatar</GroupLabel>
+          <div className="space-y-3">
+            {avatars.map((slot) => (
+              <AvatarCard key={slot.slotName} slot={slot} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasCreatures && (
+        <div className="space-y-2">
+          <GroupLabel>Creature</GroupLabel>
+          <ul className="space-y-2">
+            {creatures.map((item, i) => (
+              <li
+                key={item.itemId ?? i}
+                className="flex items-center gap-2.5 rounded-lg bg-black/20 p-2.5"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- Neople item CDN (see portrait.ts) */}
+                <img
+                  src={item.itemId ? itemImageUrl(item.itemId) : ""}
+                  width={32}
+                  height={32}
+                  alt=""
+                  loading="lazy"
+                  className="size-8 shrink-0 rounded border border-border bg-black/20"
                 />
                 <span className={`truncate text-sm ${rarityClass(item.itemRarity)}`}>
                   {item.itemName}

@@ -25,6 +25,7 @@ export interface EquipmentRow {
   /** Fused item ("[Fusion] …"), from `upgradeInfo`. */
   fusionName: string | null;
   fusionRarity: string | null;
+  fusionItemId: string | null;
   /** Headline fusion-option effect, when present. */
   fusionEffect: string | null;
   enchant: EnchantStat[];
@@ -160,6 +161,7 @@ export function parseEquipment(blob: unknown): EquipmentRow[] {
         amplificationName: str(e["amplificationName"]),
         fusionName: upgrade ? str(upgrade["itemName"]) : null,
         fusionRarity: upgrade ? str(upgrade["itemRarity"]) : null,
+        fusionItemId: upgrade ? str(upgrade["itemId"]) : null,
         fusionEffect: parseFusionEffect(e["fusionOption"]),
         enchant: parseEnchant(e["enchant"]),
       },
@@ -359,8 +361,157 @@ export function parseBuffEquipment(blob: unknown): BuffEnhancement {
   };
 }
 
+/** Unwrap a buff snapshot blob (full character response) to its inner `skill.buff`. */
+function buffRoot(blob: unknown): Record<string, unknown> | null {
+  const root = asRecord(blob);
+  const skill = root && asRecord(root["skill"]);
+  return skill ? asRecord(skill["buff"]) : null;
+}
+
+/** Parse the buff-avatar snapshot blob into detailed avatar slots (reuses the avatar grid shape). */
+export function parseBuffAvatars(blob: unknown): AvatarSlot[] {
+  return parseAvatarsDetailed(buffRoot(blob));
+}
+
+/** Parse the buff-creature snapshot blob into icon rows (`skill.buff.creature[]`). */
+export function parseBuffCreatures(blob: unknown): ItemIcon[] {
+  const root = buffRoot(blob);
+  const arr = root && Array.isArray(root["creature"]) ? (root["creature"] as unknown[]) : [];
+  return arr.flatMap((entry) => {
+    const c = asRecord(entry);
+    if (c == null) return [];
+    return [
+      {
+        itemId: str(c["itemId"]),
+        itemName: str(c["itemName"]) ?? "Unknown",
+        itemRarity: str(c["itemRarity"]) ?? "",
+        slotName: "Creature",
+      },
+    ];
+  });
+}
+
 /** Armor slot names that anchor the left column of the dfogang equipment grid. */
-const GRID_LEFT_SLOTS = new Set(["shoulder", "top", "bottom", "belt", "shoes"]);
+const GRID_LEFT_SLOTS = new Set(["head/shoulder", "shoulder", "top", "bottom", "belt", "shoes"]);
+
+/** Explicit left/right column slot orderings for the hero grid (lowercased). */
+const GRID_LEFT_ORDER = ["head/shoulder", "top", "bottom", "belt", "shoes"];
+const GRID_RIGHT_ORDER = [
+  "weapon",
+  "title",
+  "bracelet",
+  "necklace",
+  "sub equipment",
+  "ring",
+  "earrings",
+  "magic stone",
+];
+
+/** Stable sort of rows by a lowercased slot-name priority list; unknown slots keep order at the end. */
+function orderBySlot(rows: EquipmentRow[], order: string[]): EquipmentRow[] {
+  const rank = (name: string) => {
+    const i = order.indexOf(name.trim().toLowerCase());
+    return i === -1 ? order.length : i;
+  };
+  return rows
+    .map((row, i) => ({ row, i }))
+    .sort((a, b) => rank(a.row.slotName) - rank(b.row.slotName) || a.i - b.i)
+    .map(({ row }) => row);
+}
+
+/**
+ * Reorder the Equipment-tab list so Title appears immediately before Weapon
+ * (the API emits Weapon first). All other rows keep their original order.
+ */
+export function orderEquipmentList(rows: EquipmentRow[]): EquipmentRow[] {
+  return orderBySlot(rows, ["title", "weapon"]);
+}
+
+/** Slots shown in the left list column: weapon/title + the normal armor pieces. */
+const LIST_LEFT_SLOTS = new Set([
+  "title",
+  "weapon",
+  "top",
+  "head/shoulder",
+  "shoulder",
+  "bottom",
+  "belt",
+  "shoes",
+]);
+const LIST_LEFT_ORDER = [
+  "title",
+  "weapon",
+  "top",
+  "head/shoulder",
+  "bottom",
+  "belt",
+  "shoes",
+];
+const LIST_RIGHT_ORDER = [
+  "necklace",
+  "bracelet",
+  "ring",
+  "sub equipment",
+  "magic stone",
+  "earrings",
+];
+
+/**
+ * Split the Equipment-tab list into two columns: weapon/title + normal armor on
+ * the left, accessories + special equipment on the right. Each column is ordered
+ * by its explicit slot priority list; unknown slots fall right / to the list end.
+ */
+export function splitEquipmentList(rows: EquipmentRow[]): {
+  left: EquipmentRow[];
+  right: EquipmentRow[];
+} {
+  const left: EquipmentRow[] = [];
+  const right: EquipmentRow[] = [];
+  for (const row of rows) {
+    if (LIST_LEFT_SLOTS.has(row.slotName.trim().toLowerCase())) left.push(row);
+    else right.push(row);
+  }
+  return {
+    left: orderBySlot(left, LIST_LEFT_ORDER),
+    right: orderBySlot(right, LIST_RIGHT_ORDER),
+  };
+}
+
+/** Base stats the API enchants in equal amounts; collapsed into one "Stats" line. */
+const STAT_NAMES = new Set(["Strength", "Intelligence", "Vitality", "Spirit"]);
+
+/** Attack stats enchanted in equal amounts; collapsed into one "Atk." line. */
+const ATK_NAMES = new Set(["Physical Atk.", "Magical Atk.", "Independent Atk."]);
+
+/**
+ * Collapse equal-amount enchant groups into single lines, mirroring the in-game
+ * / dfogang readout: Strength/Intelligence/Vitality/Spirit → "Stats", and
+ * Physical/Magical/Independent Atk. → "Atk.". Each combined line takes the first
+ * member's value; other enchants pass through untouched in their original order.
+ */
+export function combineStatEnchants(enchant: EnchantStat[]): EnchantStat[] {
+  const out: EnchantStat[] = [];
+  let statInserted = false;
+  let atkInserted = false;
+  for (const e of enchant) {
+    if (STAT_NAMES.has(e.name)) {
+      if (!statInserted) {
+        out.push({ name: "Stats", value: e.value });
+        statInserted = true;
+      }
+      continue;
+    }
+    if (ATK_NAMES.has(e.name)) {
+      if (!atkInserted) {
+        out.push({ name: "Atk.", value: e.value });
+        atkInserted = true;
+      }
+      continue;
+    }
+    out.push(e);
+  }
+  return out;
+}
 
 /**
  * Split equipment rows into the two flanking columns of the dfogang hero grid:
@@ -377,5 +528,8 @@ export function splitEquipmentForGrid(rows: EquipmentRow[]): {
     if (GRID_LEFT_SLOTS.has(row.slotName.trim().toLowerCase())) left.push(row);
     else right.push(row);
   }
-  return { left, right };
+  return {
+    left: orderBySlot(left, GRID_LEFT_ORDER),
+    right: orderBySlot(right, GRID_RIGHT_ORDER),
+  };
 }

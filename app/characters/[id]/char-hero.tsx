@@ -1,6 +1,7 @@
 import type { RosterCharacter } from "@/lib/roster";
 import type { EquipmentRow, EquipmentSet } from "@/lib/gear";
 import { splitEquipmentForGrid } from "@/lib/gear";
+import { setTierColor } from "@/lib/rarity";
 import { EquipColumn } from "./equip-grid";
 
 // Deterministic tint per character — matches the roster card monogram tile.
@@ -87,7 +88,12 @@ export function CharHero({ char, equipment, set, fame }: CharHeroProps) {
         {/* Fame headline + equipped-set badge */}
         <div className="text-center sm:text-right">
           {setLabel && (
-            <p className="mb-1 text-sm font-semibold text-set">{setLabel}</p>
+            <p
+              className="mb-1 text-sm font-semibold"
+              style={{ color: setTierColor(set?.rarityName) }}
+            >
+              {setLabel}
+            </p>
           )}
           <p className="text-xs uppercase tracking-widest text-muted-foreground">Fame</p>
           <p className="font-mono text-4xl font-black text-tier-fine">

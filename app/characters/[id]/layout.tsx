@@ -34,9 +34,15 @@ export default async function CharacterLayout({
     <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-4 sm:px-6">
       <Link
         href="/"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        className="group inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-colors hover:border-tier-fine hover:text-tier-fine"
       >
-        ← Characters
+        <span
+          aria-hidden
+          className="transition-transform group-hover:-translate-x-0.5"
+        >
+          ←
+        </span>
+        Characters
       </Link>
 
       <CharHero char={char} equipment={equipment} set={set} fame={latestFame} />

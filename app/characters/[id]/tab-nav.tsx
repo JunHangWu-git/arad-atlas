@@ -12,8 +12,6 @@ const tabs = [
   { label: "Equipment", path: "/gear" },
   { label: "Avatars", path: "/avatars" },
   { label: "Creatures", path: "/creatures" },
-  { label: "Buff", path: "/buff" },
-  { label: "Status", path: "/status" },
   { label: "Skills", path: "/skills" },
   { label: "Guides", path: "/guides" },
 ] as const;

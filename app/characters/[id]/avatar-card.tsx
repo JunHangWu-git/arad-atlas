@@ -28,7 +28,7 @@ interface AvatarCardProps {
 /** dfogang-style avatar card: slot label, base avatar + option, clone, emblems. */
 export function AvatarCard({ slot }: AvatarCardProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow">
+    <div className="rounded-xl bg-card p-4 shadow">
       <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
         {slot.slotName}
       </p>
@@ -37,11 +37,11 @@ export function AvatarCard({ slot }: AvatarCardProps) {
         {/* eslint-disable-next-line @next/next/no-img-element -- Neople item CDN (see portrait.ts) */}
         <img
           src={slot.itemId ? itemImageUrl(slot.itemId) : ""}
-          width={32}
-          height={32}
+          width={36}
+          height={36}
           alt=""
           loading="lazy"
-          className="size-8 shrink-0 rounded border border-border bg-black/20"
+          className="size-9 shrink-0 rounded border border-border bg-black/20"
         />
         <div className="min-w-0 flex-1">
           <p className={`text-sm font-medium leading-tight ${rarityClass(slot.itemRarity)}`}>

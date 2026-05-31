@@ -1,4 +1,4 @@
-import { itemImageUrl } from "@/lib/neople/portrait";
+import { itemImageUrl, titleIconUrl } from "@/lib/neople/portrait";
 import { rarityClass } from "@/lib/rarity";
 import type { EquipmentRow } from "@/lib/gear";
 
@@ -9,6 +9,12 @@ interface EquipCellProps {
 /** One equipment tile: item icon, rarity-tinted border, and a "+N" reinforce/amp badge. */
 function EquipCell({ row }: EquipCellProps) {
   const amped = row.amplificationName != null;
+  // Titles 404 on the Neople item CDN; dfogang renders them from id + name.
+  const iconSrc = !row.itemId
+    ? ""
+    : row.slotName === "Title"
+      ? titleIconUrl(row.itemId, row.itemName)
+      : itemImageUrl(row.itemId);
   const title = [
     row.itemName,
     row.slotName ? `(${row.slotName})` : null,
@@ -22,7 +28,7 @@ function EquipCell({ row }: EquipCellProps) {
     <div className="relative size-11 shrink-0" title={title}>
       {/* eslint-disable-next-line @next/next/no-img-element -- Neople item CDN; next/image cannot proxy these icons (see portrait.ts) */}
       <img
-        src={row.itemId ? itemImageUrl(row.itemId) : ""}
+        src={iconSrc}
         width={44}
         height={44}
         alt=""
@@ -33,7 +39,7 @@ function EquipCell({ row }: EquipCellProps) {
       {row.reinforce > 0 && (
         <span
           className="absolute -left-1 -top-1 rounded px-1 font-mono text-[10px] font-bold leading-tight text-white shadow"
-          style={{ backgroundColor: amped ? "var(--tier-fine)" : "var(--fame)" }}
+          style={{ backgroundColor: amped ? "var(--tier-legend)" : "var(--tier-fine)" }}
         >
           +{row.reinforce}
         </span>

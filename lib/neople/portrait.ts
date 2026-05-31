@@ -20,3 +20,12 @@ export function portraitUrl(serverId: string, characterId: string, zoom = 1): st
 export function itemImageUrl(itemId: string): string {
   return `${IMG_BASE_URL}/df/items/${itemId}`;
 }
+
+/**
+ * Title icon URL via the dfogang public API. The Neople item CDN 404s on most
+ * title item IDs, but dfogang renders title icons from `itemId` + name, so we
+ * source title icons there. Name is URL-encoded (titles carry brackets/spaces).
+ */
+export function titleIconUrl(itemId: string, itemName: string): string {
+  return `https://api.dfogang.com/api/title-icon/${itemId}/${encodeURIComponent(itemName)}`;
+}
