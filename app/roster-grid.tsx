@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GripVertical } from "lucide-react";
 import type { RosterCharacter } from "@/lib/roster";
@@ -23,18 +23,6 @@ export function RosterGrid({ roster }: RosterGridProps) {
   const dragIndex = useRef<number | null>(null);
   const dirty = useRef(false);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-
-  // Fame rank is independent of the manual board order: rank #1 = highest fame.
-  // Keyed by id so it stays correct no matter how the user drags cards around.
-  // Characters with no fame snapshot are left unranked (null).
-  const fameRankById = useMemo(() => {
-    const ranked = roster
-      .filter((c) => c.fame != null)
-      .sort((a, b) => (b.fame ?? 0) - (a.fame ?? 0));
-    const map = new Map<string, number>();
-    ranked.forEach((c, i) => map.set(c.id, i + 1));
-    return map;
-  }, [roster]);
 
   // Re-sync local order whenever the server sends new data (add/delete/refresh).
   // Adjusting state during render (vs. an effect) is React's recommended pattern
@@ -111,7 +99,7 @@ export function RosterGrid({ roster }: RosterGridProps) {
           >
             <GripVertical className="size-4" />
           </button>
-          <CharacterCard character={c} rank={fameRankById.get(c.id) ?? null} />
+          <CharacterCard character={c} />
         </div>
       ))}
     </div>

@@ -8,7 +8,7 @@ import {
   getLatestFameByCharacter,
   getLatestEquipmentByCharacter,
 } from "@/lib/snapshot";
-import type { ItemIcon } from "@/lib/gear";
+import type { ItemIcon, EquipmentSet } from "@/lib/gear";
 
 export interface RosterCharacter {
   id: string;
@@ -27,6 +27,8 @@ export interface RosterCharacter {
   fame: number | null;
   /** Latest equipped-gear icons, for the card frame. Empty until snapshotted. */
   equipment: ItemIcon[];
+  /** Primary armor/accessory set (name + set-point) for the card headline. */
+  equipmentSet: EquipmentSet | null;
   createdAt: number | null;
   updatedAt: number | null;
 }
@@ -63,6 +65,7 @@ function rowToRosterCharacter(row: DbRow): RosterCharacter {
     position: row.position ?? null,
     fame: null,
     equipment: [],
+    equipmentSet: null,
     createdAt: row.createdAt ?? null,
     updatedAt: row.updatedAt ?? null,
   };
@@ -90,11 +93,15 @@ export async function listRosterWithFame(): Promise<RosterCharacter[]> {
     getLatestFameByCharacter(),
     getLatestEquipmentByCharacter(),
   ]);
-  return roster.map((c) => ({
-    ...c,
-    fame: fameByChar.get(c.id) ?? null,
-    equipment: equipByChar.get(c.id) ?? [],
-  }));
+  return roster.map((c) => {
+    const gear = equipByChar.get(c.id);
+    return {
+      ...c,
+      fame: fameByChar.get(c.id) ?? null,
+      equipment: gear?.icons ?? [],
+      equipmentSet: gear?.set ?? null,
+    };
+  });
 }
 
 export async function getRosterCharacter(id: string): Promise<RosterCharacter | null> {

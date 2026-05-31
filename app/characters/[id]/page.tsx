@@ -6,8 +6,8 @@ import {
   getLatestStatusSnapshot,
   getLatestGearSnapshot,
 } from "@/lib/snapshot";
-import { parseEquipment, parseAvatars, parseCreature } from "@/lib/gear";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { parseEquipment, parseAvatars, parseCreature, parseStatusList } from "@/lib/gear";
+import { Section } from "./section";
 import { RefreshButton } from "./refresh-button";
 import { FameChart } from "./fame-chart";
 import { EquipmentList } from "./equipment-list";
@@ -34,28 +34,15 @@ export default async function CharacterOverviewPage({
   const avatars = parseAvatars(gear?.avatar);
   const creature = parseCreature(gear?.creature);
   const sidekicks = creature ? [creature, ...avatars] : avatars;
+  const statRows = parseStatusList(status?.status).slice(0, 12);
 
   const lastRefreshed =
     char.updatedAt != null
       ? new Date(char.updatedAt).toLocaleDateString()
       : "Never";
 
-  // Defensively extract stat rows. The Neople `status` field is itself the
-  // array of { name, value } entries.
-  let statRows: Array<{ name: string; value: string }> = [];
-  if (status != null && Array.isArray(status.status)) {
-    statRows = status.status.slice(0, 12).flatMap((item) => {
-      if (item == null || typeof item !== "object") return [];
-      const obj = item as Record<string, unknown>;
-      const name = typeof obj["name"] === "string" ? obj["name"] : null;
-      const value = obj["value"] != null ? String(obj["value"]) : null;
-      if (name == null || value == null) return [];
-      return [{ name, value }];
-    });
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Last refreshed: {lastRefreshed}
@@ -63,70 +50,58 @@ export default async function CharacterOverviewPage({
         <RefreshButton id={id} />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Equipment</CardTitle>
-          <Link
-            href={`/characters/${id}/gear`}
-            className="text-sm font-normal text-muted-foreground hover:underline"
-          >
-            View all →
-          </Link>
-        </CardHeader>
-        <CardContent>
+      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(360px,1fr))]">
+        <Section
+          title="Equipment"
+          action={
+            <Link
+              href={`/characters/${id}/gear`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              View all →
+            </Link>
+          }
+        >
           <EquipmentList rows={equipment.slice(0, 6)} />
-        </CardContent>
-      </Card>
+        </Section>
 
-      {sidekicks.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Avatar &amp; Creature</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ItemIconStrip items={sidekicks} />
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Fame history</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {fame.length >= 2 ? (
-            <FameChart points={fame} />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No snapshots yet. Fame tracking begins after the first refresh.
-            </p>
+        <div className="space-y-6">
+          {sidekicks.length > 0 && (
+            <Section title="Avatar & Creature">
+              <ItemIconStrip items={sidekicks} />
+            </Section>
           )}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Stat highlights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {statRows.length > 0 ? (
-            <table className="w-full text-sm">
-              <tbody>
-                {statRows.map((row) => (
-                  <tr key={row.name} className="border-b last:border-0">
-                    <td className="py-1 text-muted-foreground">{row.name}</td>
-                    <td className="py-1 text-right font-medium">{row.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No snapshots yet. Stat tracking begins after the first refresh.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          <Section title="Stat Highlights">
+            {statRows.length > 0 ? (
+              <table className="w-full text-sm">
+                <tbody>
+                  {statRows.map((row) => (
+                    <tr key={row.name} className="border-b last:border-0">
+                      <td className="py-1 text-muted-foreground">{row.name}</td>
+                      <td className="py-1 text-right font-medium">{row.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No snapshots yet. Stat tracking begins after the first refresh.
+              </p>
+            )}
+          </Section>
+        </div>
+      </div>
+
+      <Section title="Fame History">
+        {fame.length >= 2 ? (
+          <FameChart points={fame} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No snapshots yet. Fame tracking begins after the first refresh.
+          </p>
+        )}
+      </Section>
     </div>
   );
 }

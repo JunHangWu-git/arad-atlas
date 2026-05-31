@@ -9,7 +9,12 @@ import {
   snapshotLock,
 } from "@/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { parseEquipment, type ItemIcon } from "@/lib/gear";
+import {
+  parseEquipment,
+  parseEquipmentSet,
+  type ItemIcon,
+  type EquipmentSet,
+} from "@/lib/gear";
 import {
   getCharacter,
   getStatus,
@@ -355,11 +360,20 @@ export async function getLatestFameByCharacter(): Promise<Map<string, number | n
   return map;
 }
 
-// Latest equipment icon set per character, keyed by characters.id. Mirrors
-// getLatestFameByCharacter: one grouped query (never per-character) to dodge an
-// N+1 on the grid. Characters without a gear snapshot are absent from the map.
+/** Latest gear-derived card data per character: equipped icons + the primary
+ *  armor/accessory set (name + set-point). */
+export interface LatestGearCard {
+  icons: ItemIcon[];
+  set: EquipmentSet | null;
+}
+
+// Latest equipment icon set + armor set per character, keyed by characters.id.
+// Mirrors getLatestFameByCharacter: one grouped query (never per-character) to
+// dodge an N+1 on the grid. Both the icons and the set are parsed from the same
+// blob, so the set readout is free. Characters without a gear snapshot are
+// absent from the map.
 export async function getLatestEquipmentByCharacter(): Promise<
-  Map<string, ItemIcon[]>
+  Map<string, LatestGearCard>
 > {
   const result = await db.run(
     sql`
@@ -375,7 +389,7 @@ export async function getLatestEquipmentByCharacter(): Promise<
     `,
   );
 
-  const map = new Map<string, ItemIcon[]>();
+  const map = new Map<string, LatestGearCard>();
   for (const row of result.rows ?? []) {
     const r = row as { characterFk?: unknown; equipment?: unknown };
     if (typeof r.characterFk !== "string") continue;
@@ -386,7 +400,7 @@ export async function getLatestEquipmentByCharacter(): Promise<
       itemRarity: e.itemRarity,
       slotName: e.slotName,
     }));
-    map.set(r.characterFk, icons);
+    map.set(r.characterFk, { icons, set: parseEquipmentSet(blob) });
   }
   return map;
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Sprout } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { RosterCharacter } from "@/lib/roster";
 import { CharacterCardMenu } from "./character-card-menu";
@@ -19,11 +20,9 @@ function tintHue(seed: string): number {
 
 interface CharacterCardProps {
   character: RosterCharacter;
-  /** 1-based fame rank across the roster (1 = highest fame). Null if unranked. */
-  rank?: number | null;
 }
 
-export function CharacterCard({ character: c, rank = null }: CharacterCardProps) {
+export function CharacterCard({ character: c }: CharacterCardProps) {
   const initial = c.characterName.trim().charAt(0).toUpperCase() || "?";
   const hue = tintHue(c.id);
   const jobGrow = c.jobGrowName ?? c.jobName;
@@ -32,7 +31,7 @@ export function CharacterCard({ character: c, rank = null }: CharacterCardProps)
     <div className="relative group">
       <Link href={`/characters/${c.id}`} className="block">
         <Card className="overflow-hidden bg-[#0e1016] transition-transform transition-colors hover:-translate-y-0.5 hover:border-[var(--tier-fine)]">
-          {/* Character render with rank disc + level in the corners. */}
+          {/* Character render with level in the corner. */}
           <div className="relative h-64 w-full overflow-hidden">
             <CardPortrait
               serverId={c.serverId}
@@ -40,11 +39,6 @@ export function CharacterCard({ character: c, rank = null }: CharacterCardProps)
               hue={hue}
               initial={initial}
             />
-            {rank != null && (
-              <span className="absolute bottom-2.5 left-2.5 z-10 grid size-7 place-items-center rounded-full border border-white/30 bg-[var(--tier-fine)] font-mono text-xs font-bold tabular-nums text-white shadow-md">
-                {rank}
-              </span>
-            )}
             {c.level != null && (
               <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md border border-white/20 bg-black/40 px-2 py-0.5 font-mono text-[11px] font-bold text-white">
                 Lv{c.level}
@@ -81,10 +75,30 @@ export function CharacterCard({ character: c, rank = null }: CharacterCardProps)
                 aria-hidden
                 className="size-4 shrink-0"
               />
-              <span className="font-sans text-base font-semibold tabular-nums leading-none text-foreground/90">
+              <span
+                className="font-sans text-xs font-semibold tabular-nums leading-none"
+                style={{ color: "var(--set)" }}
+              >
                 {c.fame != null ? fameFormatter.format(c.fame) : "—"}
               </span>
             </div>
+
+            {/* Equipment set — dfogang-style green set-point readout: set name
+                + current set-point total in parentheses. Hidden until a gear
+                snapshot exists. */}
+            {c.equipmentSet && (
+              <div className="flex items-center gap-1 text-xs leading-none">
+                <Sprout className="size-3.5 shrink-0" style={{ color: "var(--set)" }} aria-hidden />
+                <span className="max-w-full truncate font-medium" style={{ color: "var(--set)" }}>
+                  {c.equipmentSet.name}
+                  {c.equipmentSet.setPoint != null && (
+                    <span className="ml-1 tabular-nums text-muted-foreground">
+                      ({c.equipmentSet.setPoint})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
         </Card>
       </Link>
