@@ -1,71 +1,68 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GripVertical } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import type { RosterCharacter } from "@/lib/roster";
-import { CharacterCard } from "./character-card";
+import { SortableCard } from "./sortable-card";
 
 interface RosterGridProps {
   roster: RosterCharacter[];
 }
 
 // Client wrapper around the card grid that adds drag-to-reorder via a per-card
-// grip handle. Reorders optimistically while dragging, then persists the new
-// order (POST /api/characters/reorder) and refreshes server data on drop.
+// grip handle. Uses @dnd-kit: cards are translated with CSS transforms during a
+// drag (the DOM is reordered only once, on drop), which avoids the native-DnD
+// bug where reordering the dragged node mid-drag cancels or glitches the drag.
 export function RosterGrid({ roster }: RosterGridProps) {
   const router = useRouter();
   const [order, setOrder] = useState<RosterCharacter[]>(roster);
-  // Mirror of `order` for handlers: drag events can fire before React commits
-  // the render scheduled by the last setOrder, so reading state in a closure
-  // could miss the final swap. The ref always holds the latest order.
-  const orderRef = useRef<RosterCharacter[]>(roster);
-  const dragIndex = useRef<number | null>(null);
-  const dirty = useRef(false);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   // Re-sync local order whenever the server sends new data (add/delete/refresh).
   // Adjusting state during render (vs. an effect) is React's recommended pattern
-  // for deriving state from props and avoids an extra render pass. The server
-  // component passes a fresh array only on a real data change, so local drag
-  // re-renders (stable `roster` identity) don't clobber the optimistic order.
+  // for deriving state from props. The server component passes a fresh array
+  // only on a real data change, so local drag re-renders (stable `roster`
+  // identity) don't clobber the optimistic order.
   const [syncedRoster, setSyncedRoster] = useState(roster);
   if (syncedRoster !== roster) {
     setSyncedRoster(roster);
     setOrder(roster);
-    // orderRef is intentionally not written here (refs must not be mutated
-    // during render). It's only read in handleDragEnd after a drag, and every
-    // drag refreshes it via handleDragEnter's setOrder updater below.
   }
 
-  function handleDragStart(i: number) {
-    dragIndex.current = i;
-    setDraggingIndex(i);
-  }
+  // PointerSensor with a small distance constraint so a click on the grip (or a
+  // tap that doesn't move) still works as a click and doesn't hijack menu/link
+  // interaction; drag only begins after the pointer travels 6px.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
-  // Live-reorder as the dragged card moves over a new slot.
-  function handleDragEnter(i: number) {
-    const from = dragIndex.current;
-    if (from === null || from === i) return;
-    setOrder((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(i, 0, moved);
-      orderRef.current = next;
-      return next;
-    });
-    dragIndex.current = i;
-    setDraggingIndex(i);
-    dirty.current = true;
-  }
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  async function handleDragEnd() {
-    dragIndex.current = null;
-    setDraggingIndex(null);
-    if (!dirty.current) return;
-    dirty.current = false;
+    const from = order.findIndex((c) => c.id === active.id);
+    const to = order.findIndex((c) => c.id === over.id);
+    if (from === -1 || to === -1) return;
 
-    const ids = orderRef.current.map((c) => c.id);
+    const next = arrayMove(order, from, to);
+    setOrder(next);
+
+    const ids = next.map((c) => c.id);
     try {
       const res = await fetch("/api/characters/reorder", {
         method: "POST",
@@ -79,29 +76,19 @@ export function RosterGrid({ roster }: RosterGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
-      {order.map((c, i) => (
-        <div
-          key={c.id}
-          onDragEnter={() => handleDragEnter(i)}
-          onDragOver={(e) => e.preventDefault()}
-          className={`group/cell relative transition-opacity ${
-            draggingIndex === i ? "opacity-50" : ""
-          }`}
-        >
-          <button
-            type="button"
-            aria-label="Drag to reorder"
-            draggable
-            onDragStart={() => handleDragStart(i)}
-            onDragEnd={handleDragEnd}
-            className="absolute right-11 top-2.5 z-10 hidden size-8 cursor-grab place-items-center rounded-lg border border-border bg-black/50 text-foreground transition-colors hover:border-[var(--tier-fine)] active:cursor-grabbing group-hover/cell:grid"
-          >
-            <GripVertical className="size-4" />
-          </button>
-          <CharacterCard character={c} />
+    <DndContext
+      id="roster-grid-dnd"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={order.map((c) => c.id)} strategy={rectSortingStrategy}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
+          {order.map((c) => (
+            <SortableCard key={c.id} character={c} />
+          ))}
         </div>
-      ))}
-    </div>
+      </SortableContext>
+    </DndContext>
   );
 }
