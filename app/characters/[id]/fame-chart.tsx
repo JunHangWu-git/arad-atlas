@@ -68,6 +68,20 @@ function formatFameTick(value: number): string {
   return fameTickFormatter.format(Math.round(value));
 }
 
+const CHART_MARGIN = { top: 4, right: 8, left: 0, bottom: 4 };
+const AXIS_TICK = { fontSize: 11 };
+
+function domainMin(dataMin: number): number {
+  return Math.floor(dataMin - 800);
+}
+
+function domainMax(dataMax: number): number {
+  return Math.ceil(dataMax + 800);
+}
+
+const CHART_DOMAIN: [(dataMin: number) => number, (dataMax: number) => number] =
+  [domainMin, domainMax];
+
 export function FameChart({ points }: FameChartProps) {
   const data: ChartDatum[] = points.map((p) => {
     const rawDate = new Date(p.capturedAt);
@@ -80,25 +94,22 @@ export function FameChart({ points }: FameChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+      <LineChart data={data} margin={CHART_MARGIN}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={AXIS_TICK}
           tickLine={false}
           tickFormatter={formatDateTick}
         />
         <YAxis
-          tick={{ fontSize: 11 }}
+          tick={AXIS_TICK}
           tickLine={false}
           width={64}
           tickCount={6}
           // Pad the range a touch beyond the data so the line floats inside the
           // plot (like dfogang) instead of hugging the top/bottom gridlines.
-          domain={[
-            (dataMin: number) => Math.floor(dataMin - 800),
-            (dataMax: number) => Math.ceil(dataMax + 800),
-          ]}
+          domain={CHART_DOMAIN}
           allowDecimals={false}
           tickFormatter={formatFameTick}
         />

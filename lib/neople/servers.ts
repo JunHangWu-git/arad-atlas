@@ -5,5 +5,5 @@ import { serverListSchema, type ServerList } from "./schemas";
 
 /** Fetch the list of DFO Global servers. */
 export async function getServers(): Promise<ServerList> {
-  return neopleFetch("/df/servers", undefined, serverListSchema);
+  return neopleFetch("/df/servers", undefined, serverListSchema, { revalidate: 60 * 60 * 24 * 7 });
 }

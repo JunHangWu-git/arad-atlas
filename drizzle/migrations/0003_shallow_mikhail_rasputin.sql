@@ -1,0 +1,2 @@
+CREATE INDEX `characters_position_created_idx` ON `characters` (`position`,`created_at`);--> statement-breakpoint
+CREATE INDEX `fame_snapshot_char_captured_fame_idx` ON `fame_snapshot` (`character_fk`,`captured_at`,`fame`);

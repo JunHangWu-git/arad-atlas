@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { NeopleError } from "@/lib/neople/client";
 import { getSkills } from "@/lib/neople/jobs";
 
+export const revalidate = 86400;
+
 export async function GET(
   request: NextRequest,
   ctx: { params: Promise<{ jobId: string }> },

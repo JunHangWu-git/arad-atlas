@@ -128,8 +128,18 @@ const CHAR_ROW = {
   updatedAt: 1000,
 };
 
-const BASE_RESPONSE = { fame: 5000, level: 110, jobName: "Ranger", adventureName: "NewAdventure" };
-const STATUS_RESPONSE = { status: { hp: 100 }, buff: { atk: 200 } };
+// The live /status endpoint extends the character base envelope, so it carries
+// the same identity fields (fame/level/jobName/adventureName) that the dedicated
+// getCharacter() call used to provide. snapshotCharacter sources its base fields
+// from this response, so the test fixture mirrors the real shape.
+const STATUS_RESPONSE = {
+  fame: 5000,
+  level: 110,
+  jobName: "Ranger",
+  adventureName: "NewAdventure",
+  status: { hp: 100 },
+  buff: { atk: 200 },
+};
 const EQUIPMENT_RESPONSE = { slots: [] };
 const AVATAR_RESPONSE = { avatars: [] };
 const CREATURE_RESPONSE = { creature: null };
@@ -140,7 +150,9 @@ const BUFF_AVATAR_RESPONSE = { buffAvatar: [] };
 const BUFF_CREATURE_RESPONSE = { buffCreature: null };
 
 function allHelpersFulfilled() {
-  mockGetCharacter.mockResolvedValue(BASE_RESPONSE);
+  // getCharacter is no longer awaited by snapshotCharacter (base fields now ride
+  // along with the status response), but keep the mock harmless for safety.
+  mockGetCharacter.mockResolvedValue(STATUS_RESPONSE);
   mockGetStatus.mockResolvedValue(STATUS_RESPONSE);
   mockGetEquipment.mockResolvedValue(EQUIPMENT_RESPONSE);
   mockGetAvatar.mockResolvedValue(AVATAR_RESPONSE);

@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import type { RosterCharacter } from "@/lib/roster";
@@ -24,7 +25,7 @@ interface CharacterCardProps {
   character: RosterCharacter;
 }
 
-export function CharacterCard({ character: c }: CharacterCardProps) {
+function CharacterCardInner({ character: c }: CharacterCardProps) {
   const initial = c.characterName.trim().charAt(0).toUpperCase() || "?";
   const hue = tintHue(c.id);
   const jobGrow = c.jobGrowName ?? c.jobName;
@@ -143,3 +144,6 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
     </div>
   );
 }
+
+export const CharacterCard = React.memo(CharacterCardInner);
+CharacterCard.displayName = "CharacterCard";

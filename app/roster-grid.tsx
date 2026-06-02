@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -75,6 +75,8 @@ export function RosterGrid({ roster }: RosterGridProps) {
     }
   }
 
+  const itemIds = useMemo(() => order.map((c) => c.id), [order]);
+
   return (
     <DndContext
       id="roster-grid-dnd"
@@ -82,7 +84,7 @@ export function RosterGrid({ roster }: RosterGridProps) {
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={order.map((c) => c.id)} strategy={rectSortingStrategy}>
+      <SortableContext items={itemIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
           {order.map((c) => (
             <SortableCard key={c.id} character={c} />

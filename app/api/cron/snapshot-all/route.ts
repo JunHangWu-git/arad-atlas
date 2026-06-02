@@ -1,6 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getAllCharacterIds, snapshotCharacter } from "@/lib/snapshot";
+import { mapWithConcurrency } from "@/lib/concurrency";
+
+const CONCURRENCY_LIMIT = 4;
 
 // Snapshot capture hits the DB + external API — must run on Node, never cached.
 export const runtime = "nodejs";
@@ -26,31 +29,35 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const ids = await getAllCharacterIds();
-  const results: { id: string; ok: boolean; reason?: string; errors?: string[] }[] =
-    [];
 
-  // Sequential: each snapshotCharacter call respects its own per-char lock and
-  // we avoid hammering the Neople API in parallel.
-  for (const id of ids) {
-    try {
-      const result = await snapshotCharacter(id);
-      results.push({
-        id,
-        ok: result.ok,
-        reason: result.reason,
-        errors: result.errors,
-      });
-      console.info(
-        `[cron/snapshot-all] ${id}: ok=${result.ok}` +
-          (result.reason ? ` reason=${result.reason}` : "") +
-          (result.errors?.length ? ` errors=${result.errors.join(",")}` : ""),
-      );
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "unknown error";
-      results.push({ id, ok: false, reason: "exception" });
-      console.error(`[cron/snapshot-all] ${id}: exception ${message}`);
-    }
-  }
+  // Bounded-parallel: at most CONCURRENCY_LIMIT characters in flight at once.
+  // The token-bucket limiter in lib/neople/limiter.ts throttles network fan-out;
+  // each snapshotCharacter call holds its own per-character lock internally.
+  const results = await mapWithConcurrency(
+    ids,
+    CONCURRENCY_LIMIT,
+    async (id) => {
+      try {
+        const result = await snapshotCharacter(id);
+        console.info(
+          `[cron/snapshot-all] ${id}: ok=${result.ok}` +
+            (result.reason ? ` reason=${result.reason}` : "") +
+            (result.errors?.length ? ` errors=${result.errors.join(",")}` : ""),
+        );
+        return {
+          id,
+          ok: result.ok,
+          reason: result.reason,
+          errors: result.errors,
+        };
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "unknown error";
+        console.error(`[cron/snapshot-all] ${id}: exception ${message}`);
+        return { id, ok: false, reason: "exception" };
+      }
+    },
+  );
 
   const okCount = results.filter((r) => r.ok).length;
   console.info(

@@ -1,4 +1,6 @@
 import { getItem } from "@/lib/neople/items";
+
+export const revalidate = 86400;
 import { rarityClass } from "@/lib/rarity";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
