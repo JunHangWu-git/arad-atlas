@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { dfogangPortraitUrl } from "@/lib/neople/portrait";
+import { dfogangPortraitUrl, dfogangPreviewUrl } from "@/lib/neople/portrait";
 
 interface CardPortraitProps {
   serverId: string;
@@ -17,6 +17,11 @@ interface CardPortraitProps {
    * fallback tile still gets its hue tint.
    */
   transparent?: boolean;
+  /**
+   * Use dfogang's `/image/preview/...` card-framed render instead of the full
+   * render. Roster cards opt in; the hero keeps the full render.
+   */
+  preview?: boolean;
 }
 
 export function CardPortrait({
@@ -25,11 +30,14 @@ export function CardPortrait({
   hue,
   initial,
   transparent = false,
+  preview = false,
 }: CardPortraitProps) {
   const [failed, setFailed] = useState(false);
   // Deterministic URL (no cache-buster) so SSR and hydration agree. Falls back
   // to the hashed-hue monogram tile if the render 404s.
-  const src = dfogangPortraitUrl(serverId, characterName);
+  const src = preview
+    ? dfogangPreviewUrl(serverId, characterName)
+    : dfogangPortraitUrl(serverId, characterName);
 
   return (
     <div

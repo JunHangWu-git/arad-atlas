@@ -62,10 +62,10 @@ function formatDateTick(value: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+const fameTickFormatter = new Intl.NumberFormat("en-US");
+
 function formatFameTick(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return String(value);
+  return fameTickFormatter.format(Math.round(value));
 }
 
 export function FameChart({ points }: FameChartProps) {
@@ -91,7 +91,15 @@ export function FameChart({ points }: FameChartProps) {
         <YAxis
           tick={{ fontSize: 11 }}
           tickLine={false}
-          width={60}
+          width={64}
+          tickCount={6}
+          // Pad the range a touch beyond the data so the line floats inside the
+          // plot (like dfogang) instead of hugging the top/bottom gridlines.
+          domain={[
+            (dataMin: number) => Math.floor(dataMin - 800),
+            (dataMax: number) => Math.ceil(dataMax + 800),
+          ]}
+          allowDecimals={false}
           tickFormatter={formatFameTick}
         />
         <Tooltip content={<FameTooltip />} />

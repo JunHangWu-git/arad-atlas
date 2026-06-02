@@ -47,6 +47,21 @@ export function dfogangPortraitUrl(
 }
 
 /**
+ * Preview-render variant of {@link dfogangPortraitUrl} — dfogang's
+ * `/image/preview/...` endpoint returns a tighter, card-framed render (used on
+ * the roster cards, vs. the full hero render). Same `?v=` cache-buster rules.
+ */
+export function dfogangPreviewUrl(
+  serverId: string,
+  characterName: string,
+  version?: string | number,
+): string {
+  const server = serverId.toLowerCase();
+  const base = `${DFOGANG_API_BASE}/image/preview/${server}/${encodeURIComponent(characterName)}.png`;
+  return version === undefined ? base : `${base}?v=${toBase64(String(version))}`;
+}
+
+/**
  * Public CDN icon URL for any in-game item (gear, avatar, creature, …).
  *
  * Unlike character portraits — which 404 on the Global API — item images are

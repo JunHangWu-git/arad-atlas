@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Sprout } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { RosterCharacter } from "@/lib/roster";
+import { classArtUrl } from "@/lib/neople/portrait";
 import { CharacterCardMenu } from "./character-card-menu";
 import { CardPortrait } from "./card-portrait";
 
@@ -26,18 +27,38 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
   const initial = c.characterName.trim().charAt(0).toUpperCase() || "?";
   const hue = tintHue(c.id);
   const jobGrow = c.jobGrowName ?? c.jobName;
+  const classArt = c.jobName
+    ? classArtUrl(c.jobName, c.jobGrowName ?? "", "card")
+    : null;
 
   return (
     <div className="relative group">
       <Link href={`/characters/${c.id}`} className="block">
-        <Card className="overflow-hidden bg-[#0e1016] transition-transform transition-colors hover:-translate-y-0.5 hover:border-[var(--tier-fine)]">
+        <Card className="relative overflow-hidden bg-black transition-transform transition-colors hover:-translate-y-0.5 hover:border-[var(--tier-fine)]">
+          {/* Faint full-card class art behind everything; a dark gradient keeps
+              the body text legible over it. */}
+          {classArt && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-0"
+              style={{
+                backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.7) 75%, #000 100%), url('${classArt}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "top center",
+                backgroundRepeat: "no-repeat",
+                opacity: 0.45,
+              }}
+            />
+          )}
           {/* Character render with level in the corner. */}
-          <div className="relative h-64 w-full overflow-hidden">
+          <div className="relative z-10 h-72 w-full overflow-hidden">
             <CardPortrait
               serverId={c.serverId}
               characterName={c.characterName}
               hue={hue}
               initial={initial}
+              transparent
+              preview
             />
             {c.level != null && (
               <span className="absolute bottom-2.5 right-2.5 z-10 rounded-md border border-white/20 bg-black/40 px-2 py-0.5 font-mono text-[11px] font-bold text-white">
@@ -47,7 +68,7 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
           </div>
 
           {/* Body: dfogang-style centered identity block + headline metric. */}
-          <div className="flex flex-col items-center gap-1 px-4 pb-4 pt-3 text-center">
+          <div className="relative z-10 flex flex-col items-center gap-1 px-4 pb-4 pt-3 text-center">
             {c.adventureName && (
               <p className="max-w-full truncate text-xs text-muted-foreground">
                 {c.adventureName}

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 
 export function AddCharacterForm() {
   const router = useRouter();
-  const [serverId, setServerId] = useState("");
+  // Global server is always "cain" — no per-character server choice needed.
+  const serverId = "cain";
   const [characterName, setCharacterName] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,6 @@ export function AddCharacterForm() {
             : "Failed to add character.";
         setError(msg);
       } else {
-        setServerId("");
         setCharacterName("");
         router.refresh();
       }
@@ -49,13 +49,6 @@ export function AddCharacterForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-md">
       <div className="flex gap-2">
-        <Input
-          placeholder="Server (e.g. cain)"
-          value={serverId}
-          onChange={(e) => setServerId(e.target.value)}
-          required
-          disabled={pending}
-        />
         <Input
           placeholder="Character name"
           value={characterName}

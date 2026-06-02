@@ -39,55 +39,60 @@ export function CharHero({ char, set }: CharHeroProps) {
 
   return (
     <section
-      className="relative min-h-[22rem] overflow-hidden rounded-xl border shadow"
-      style={{
-        background: `linear-gradient(135deg, hsl(${hue} 35% 12%) 0%, var(--panel) 55%, var(--panel-2) 100%)`,
-      }}
+      className="relative min-h-[26rem] overflow-hidden rounded-xl border shadow"
+      style={{ background: "#06070a" }}
     >
-      {/* Full class art, anchored right, faded into the panel on the left */}
+      {/* Class art over the black hero, biased to the upper-right and faded out
+          on the left so it dissolves into the equipment composite */}
       {classArt && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage: `url('${classArt}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "100% 15%",
+            backgroundSize: "auto 150%",
+            backgroundPosition: "right 12%",
             backgroundRepeat: "no-repeat",
+            opacity: 0.55,
             maskImage:
-              "linear-gradient(to right, transparent 0%, transparent 30%, black 75%)",
+              "linear-gradient(to right, transparent 0%, transparent 38%, black 52%)",
             WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, transparent 30%, black 75%)",
+              "linear-gradient(to right, transparent 0%, transparent 38%, black 52%)",
           }}
         />
       )}
 
       {/* Advanced class name, top-right corner */}
       {className && (
-        <p className="absolute right-4 top-4 z-10 text-lg font-bold text-white drop-shadow">
+        <p className="absolute right-5 top-4 z-10 text-5xl font-bold italic tracking-tight text-white drop-shadow">
           {className}
         </p>
       )}
 
-      {/* Left: character render + equipped-set level */}
-      <div className="relative flex flex-col items-center gap-3 p-5 sm:items-start">
-        <div className="relative h-48 w-40">
-          <CardPortrait
-            serverId={char.serverId}
-            characterName={char.characterName}
-            hue={hue}
-            initial={char.characterName.trim().charAt(0).toUpperCase() || "?"}
-            transparent
-          />
+      {/* Left: character render + equipped-set level. The composite render has a
+          definite width (height × art aspect); wrapping it with the label in an
+          items-center column centers the set label under the render. The outer
+          column left-aligns that block with edge padding. */}
+      <div className="relative flex min-h-[26rem] flex-col items-start p-6">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative h-[21rem] aspect-[492/354]">
+            <CardPortrait
+              serverId={char.serverId}
+              characterName={char.characterName}
+              hue={hue}
+              initial={char.characterName.trim().charAt(0).toUpperCase() || "?"}
+              transparent
+            />
+          </div>
+          {setLabel && (
+            <p
+              className="text-center text-sm font-semibold drop-shadow"
+              style={{ color: setTierColor(set?.rarityName) }}
+            >
+              {setLabel}
+            </p>
+          )}
         </div>
-        {setLabel && (
-          <p
-            className="text-sm font-semibold drop-shadow"
-            style={{ color: setTierColor(set?.rarityName) }}
-          >
-            {setLabel}
-          </p>
-        )}
       </div>
     </section>
   );
