@@ -83,6 +83,8 @@ async function parseErrorEnvelope(
 export interface NeopleFetchOptions {
   readonly limiter?: Limiter;
   readonly fetchImpl?: typeof fetch;
+  /** Next.js ISR revalidation period in seconds. Omit to use Next's default (no `next` key). */
+  readonly revalidate?: number;
 }
 
 export async function neopleFetch<T>(
@@ -95,6 +97,9 @@ export async function neopleFetch<T>(
   const url = buildUrl(path, params, apiKey);
   const limiter = options?.limiter ?? defaultLimiter;
   const doFetch = options?.fetchImpl ?? fetch;
+  const revalidate = options?.revalidate;
+  const fetchInit: RequestInit =
+    revalidate !== undefined ? { next: { revalidate } } : {};
 
   let lastError: unknown;
 
@@ -103,7 +108,7 @@ export async function neopleFetch<T>(
 
     let response: Response;
     try {
-      response = await doFetch(url);
+      response = await doFetch(url, fetchInit);
     } catch (err) {
       // Network-level failure: retry like a transient error.
       lastError = err;

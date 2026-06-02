@@ -33,17 +33,34 @@ const SET_CATEGORIES = [
   "Tales",
 ] as const;
 
+// Module-level memo cache keyed by raw setName input. Null/undefined/empty
+// strings are never stored — the fast-path guard returns before the cache is
+// consulted, preserving those edge-case semantics exactly.
+const _cache = new Map<string, string>();
+
 /**
  * dfogang CDN URL for the icon of an equipment set, derived from its full name.
  * Returns the Unknown.png icon for empty/unrecognized names.
  */
 export function setIconUrl(setName: string | null | undefined): string {
   if (!setName) return `${CDN_BASE}/Unknown.png`;
+  const cached = _cache.get(setName);
+  if (cached !== undefined) return cached;
+  let result = `${CDN_BASE}/Unknown.png`;
   for (const [match, icon] of SET_SPECIAL_MAPPINGS) {
-    if (setName.includes(match)) return `${CDN_BASE}/${icon}.png`;
+    if (setName.includes(match)) {
+      result = `${CDN_BASE}/${icon}.png`;
+      break;
+    }
   }
-  for (const category of SET_CATEGORIES) {
-    if (setName.includes(category)) return `${CDN_BASE}/${category}.png`;
+  if (result === `${CDN_BASE}/Unknown.png`) {
+    for (const category of SET_CATEGORIES) {
+      if (setName.includes(category)) {
+        result = `${CDN_BASE}/${category}.png`;
+        break;
+      }
+    }
   }
-  return `${CDN_BASE}/Unknown.png`;
+  _cache.set(setName, result);
+  return result;
 }

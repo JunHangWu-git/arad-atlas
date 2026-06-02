@@ -27,7 +27,10 @@ export const characters = sqliteTable(
     createdAt: integer("created_at"), // unix ms
     updatedAt: integer("updated_at"), // unix ms
   },
-  (t) => [uniqueIndex("characters_server_char_uniq").on(t.serverId, t.characterId)]
+  (t) => [
+    uniqueIndex("characters_server_char_uniq").on(t.serverId, t.characterId),
+    index("characters_position_created_idx").on(t.position, t.createdAt),
+  ]
 );
 
 export const fameSnapshot = sqliteTable(
@@ -41,7 +44,10 @@ export const fameSnapshot = sqliteTable(
     level: integer("level"),
     capturedAt: integer("captured_at").notNull(), // unix ms
   },
-  (t) => [index("fame_snapshot_char_captured_idx").on(t.characterFk, t.capturedAt)]
+  (t) => [
+    index("fame_snapshot_char_captured_idx").on(t.characterFk, t.capturedAt),
+    index("fame_snapshot_char_captured_fame_idx").on(t.characterFk, t.capturedAt, t.fame),
+  ]
 );
 
 export const gearSnapshot = sqliteTable(

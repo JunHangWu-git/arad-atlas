@@ -395,7 +395,7 @@ export function parseBuffCreatures(blob: unknown): ItemIcon[] {
 const GRID_LEFT_SLOTS = new Set(["head/shoulder", "shoulder", "top", "bottom", "belt", "shoes"]);
 
 /** Explicit left/right column slot orderings for the hero grid (lowercased). */
-const GRID_LEFT_ORDER = ["head/shoulder", "top", "bottom", "belt", "shoes"];
+const GRID_LEFT_ORDER = ["head/shoulder", "shoulder", "top", "bottom", "belt", "shoes"];
 const GRID_RIGHT_ORDER = [
   "weapon",
   "title",

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { db } from "@/db";
 import {
   characters,
@@ -16,7 +17,6 @@ import {
   type EquipmentSet,
 } from "@/lib/gear";
 import {
-  getCharacter,
   getStatus,
   getEquipment,
   getAvatar,
@@ -130,7 +130,6 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
     const now = Date.now();
 
     const [
-      baseResult,
       statusResult,
       equipmentResult,
       avatarResult,
@@ -141,7 +140,6 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
       buffAvatarResult,
       buffCreatureResult,
     ] = await Promise.allSettled([
-      getCharacter(serverId, characterId),
       getStatus(serverId, characterId),
       getEquipment(serverId, characterId),
       getAvatar(serverId, characterId),
@@ -154,7 +152,6 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
     ]);
 
     const endpointNames = [
-      "getCharacter",
       "getStatus",
       "getEquipment",
       "getAvatar",
@@ -167,7 +164,6 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
     ];
 
     const results = [
-      baseResult,
       statusResult,
       equipmentResult,
       avatarResult,
@@ -183,10 +179,13 @@ export async function snapshotCharacter(id: string): Promise<SnapshotResult> {
       .map((r, i) => (r.status === "rejected" ? endpointNames[i] : null))
       .filter((name): name is string => name !== null);
 
-    const baseVal =
-      baseResult.status === "fulfilled" ? baseResult.value : null;
     const statusVal =
       statusResult.status === "fulfilled" ? statusResult.value : null;
+    // The status response extends characterBaseSchema, so it carries the same
+    // base identity envelope (fame/level/jobName/jobGrowName/adventureName)
+    // that the dedicated getCharacter() call used to provide. Sourcing the base
+    // fields from it drops one per-character round-trip.
+    const baseVal = statusVal;
     const equipmentVal =
       equipmentResult.status === "fulfilled" ? equipmentResult.value : null;
     const avatarVal =
@@ -286,51 +285,51 @@ export async function getFameHistory(
     .reverse();
 }
 
-export async function getLatestGearSnapshot(
-  id: string,
-): Promise<GearSnapshot | null> {
-  const rows = await db
-    .select()
-    .from(gearSnapshot)
-    .where(eq(gearSnapshot.characterFk, id))
-    .orderBy(desc(gearSnapshot.capturedAt))
-    .limit(1);
+export const getLatestGearSnapshot = cache(
+  async (id: string): Promise<GearSnapshot | null> => {
+    const rows = await db
+      .select()
+      .from(gearSnapshot)
+      .where(eq(gearSnapshot.characterFk, id))
+      .orderBy(desc(gearSnapshot.capturedAt))
+      .limit(1);
 
-  if (rows.length === 0) return null;
-  const row = rows[0];
+    if (rows.length === 0) return null;
+    const row = rows[0];
 
-  return {
-    equipment: safeParse(row.equipment),
-    avatar: safeParse(row.avatar),
-    creature: safeParse(row.creature),
-    flag: safeParse(row.flag),
-    mistAssimilation: safeParse(row.mistAssimilation),
-    buffEquipment: safeParse(row.buffEquipment),
-    buffAvatar: safeParse(row.buffAvatar),
-    buffCreature: safeParse(row.buffCreature),
-    capturedAt: row.capturedAt,
-  };
-}
+    return {
+      equipment: safeParse(row.equipment),
+      avatar: safeParse(row.avatar),
+      creature: safeParse(row.creature),
+      flag: safeParse(row.flag),
+      mistAssimilation: safeParse(row.mistAssimilation),
+      buffEquipment: safeParse(row.buffEquipment),
+      buffAvatar: safeParse(row.buffAvatar),
+      buffCreature: safeParse(row.buffCreature),
+      capturedAt: row.capturedAt,
+    };
+  },
+);
 
-export async function getLatestStatusSnapshot(
-  id: string,
-): Promise<StatusSnapshotData | null> {
-  const rows = await db
-    .select()
-    .from(statusSnapshot)
-    .where(eq(statusSnapshot.characterFk, id))
-    .orderBy(desc(statusSnapshot.capturedAt))
-    .limit(1);
+export const getLatestStatusSnapshot = cache(
+  async (id: string): Promise<StatusSnapshotData | null> => {
+    const rows = await db
+      .select()
+      .from(statusSnapshot)
+      .where(eq(statusSnapshot.characterFk, id))
+      .orderBy(desc(statusSnapshot.capturedAt))
+      .limit(1);
 
-  if (rows.length === 0) return null;
-  const row = rows[0];
+    if (rows.length === 0) return null;
+    const row = rows[0];
 
-  return {
-    status: safeParse(row.status),
-    buff: safeParse(row.buff),
-    capturedAt: row.capturedAt,
-  };
-}
+    return {
+      status: safeParse(row.status),
+      buff: safeParse(row.buff),
+      capturedAt: row.capturedAt,
+    };
+  },
+);
 
 // Latest fame value per character, keyed by characters.id. Characters with no
 // fame snapshot are simply absent from the map (callers default to null).
@@ -413,31 +412,25 @@ export async function getAllCharacterIds(): Promise<string[]> {
 // Health = staleness of the OLDEST character's latest fame snapshot.
 // A character with zero snapshots is treated as infinitely stale (not ok).
 export async function getSnapshotHealth(): Promise<SnapshotHealth> {
-  const ids = await getAllCharacterIds();
-  const characterCount = ids.length;
+  // One pass: every character LEFT JOINed to its latest fame snapshot.
+  // Missing snapshots surface as a NULL `latest`.
+  const rows = await db
+    .select({
+      id: characters.id,
+      latest: sql<number | null>`max(${fameSnapshot.capturedAt})`,
+    })
+    .from(characters)
+    .leftJoin(fameSnapshot, eq(fameSnapshot.characterFk, characters.id))
+    .groupBy(characters.id);
+
+  const characterCount = rows.length;
 
   if (characterCount === 0) {
     return { ok: true, maxAgeMs: 0, characterCount: 0 };
   }
 
-  // Latest capturedAt per character that HAS a fame snapshot.
-  const latestRows = await db
-    .select({
-      characterFk: fameSnapshot.characterFk,
-      latest: sql<number>`max(${fameSnapshot.capturedAt})`,
-    })
-    .from(fameSnapshot)
-    .groupBy(fameSnapshot.characterFk);
-
-  const latestByChar = new Map<string, number>();
-  for (const row of latestRows) {
-    if (row.characterFk !== null) {
-      latestByChar.set(row.characterFk, row.latest);
-    }
-  }
-
-  // Any character missing a snapshot → stale.
-  const hasMissing = ids.some((id) => !latestByChar.has(id));
+  // Any character without a fame snapshot (NULL latest) → infinitely stale.
+  const hasMissing = rows.some((row) => row.latest === null);
   if (hasMissing) {
     return {
       ok: false,
@@ -447,7 +440,9 @@ export async function getSnapshotHealth(): Promise<SnapshotHealth> {
   }
 
   const now = Date.now();
-  const oldestLatest = Math.min(...Array.from(latestByChar.values()));
+  const oldestLatest = Math.min(
+    ...rows.map((row) => row.latest as number),
+  );
   const maxAgeMs = now - oldestLatest;
 
   return {

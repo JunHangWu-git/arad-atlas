@@ -11,7 +11,7 @@ import { jobsSchema, skillListSchema, type Jobs, type SkillList } from "./schema
  * cache key + invalidation surface for data that rarely changes.
  */
 export async function getJobs(): Promise<Jobs> {
-  return neopleFetch("/df/jobs", undefined, jobsSchema);
+  return neopleFetch("/df/jobs", undefined, jobsSchema, { revalidate: 60 * 60 * 24 * 7 });
 }
 
 /**

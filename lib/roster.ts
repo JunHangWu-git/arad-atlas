@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { eq, desc, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { characters } from "@/db/schema";
@@ -104,15 +105,17 @@ export async function listRosterWithFame(): Promise<RosterCharacter[]> {
   });
 }
 
-export async function getRosterCharacter(id: string): Promise<RosterCharacter | null> {
-  const rows = await db
-    .select()
-    .from(characters)
-    .where(eq(characters.id, id))
-    .limit(1);
-  if (rows.length === 0) return null;
-  return rowToRosterCharacter(rows[0]);
-}
+export const getRosterCharacter = cache(
+  async (id: string): Promise<RosterCharacter | null> => {
+    const rows = await db
+      .select()
+      .from(characters)
+      .where(eq(characters.id, id))
+      .limit(1);
+    if (rows.length === 0) return null;
+    return rowToRosterCharacter(rows[0]);
+  },
+);
 
 export async function addCharacter(
   serverId: string,
@@ -173,7 +176,7 @@ export async function addCharacter(
     .from(characters);
   const nextPosition = (maxPosition ?? -1) + 1;
 
-  await db
+  const [saved] = await db
     .insert(characters)
     .values({
       id,
@@ -205,13 +208,13 @@ export async function addCharacter(
         guildName: enriched.guildName,
         updatedAt: now,
       },
-    });
+    })
+    .returning();
 
-  const saved = await getRosterCharacter(id);
   if (!saved) {
     throw new Error(`Failed to retrieve character after upsert: ${id}`);
   }
-  return saved;
+  return rowToRosterCharacter(saved);
 }
 
 export async function deleteCharacter(id: string): Promise<void> {
@@ -224,14 +227,15 @@ export async function deleteCharacter(id: string): Promise<void> {
 export async function reorderCharacters(orderedIds: string[]): Promise<void> {
   if (orderedIds.length === 0) return;
   const now = Date.now();
-  await db.transaction(async (tx) => {
-    for (let i = 0; i < orderedIds.length; i += 1) {
-      await tx
-        .update(characters)
-        .set({ position: i, updatedAt: now })
-        .where(eq(characters.id, orderedIds[i]));
-    }
-  });
+  const [first, ...rest] = orderedIds.map((id, i) =>
+    db
+      .update(characters)
+      .set({ position: i, updatedAt: now })
+      .where(eq(characters.id, id)),
+  );
+  // libSQL batch runs all statements in a single atomic transaction and a
+  // single round-trip, replacing the previous per-id UPDATE loop.
+  await db.batch([first, ...rest]);
 }
 
 function isValidHttpUrl(url: string): boolean {
@@ -266,16 +270,16 @@ export async function addGuideUrl(
   }
 
   const updated = [...char.guideUrls, trimmed];
-  await db
+  const [saved] = await db
     .update(characters)
     .set({ guideUrls: JSON.stringify(updated), updatedAt: Date.now() })
-    .where(eq(characters.id, id));
+    .where(eq(characters.id, id))
+    .returning();
 
-  const saved = await getRosterCharacter(id);
   if (!saved) {
     throw new Error(`Failed to retrieve character after update: ${id}`);
   }
-  return saved;
+  return rowToRosterCharacter(saved);
 }
 
 export async function removeGuideUrl(
@@ -293,14 +297,14 @@ export async function removeGuideUrl(
   }
 
   const updated = char.guideUrls.filter((u) => u !== trimmed);
-  await db
+  const [saved] = await db
     .update(characters)
     .set({ guideUrls: JSON.stringify(updated), updatedAt: Date.now() })
-    .where(eq(characters.id, id));
+    .where(eq(characters.id, id))
+    .returning();
 
-  const saved = await getRosterCharacter(id);
   if (!saved) {
     throw new Error(`Failed to retrieve character after update: ${id}`);
   }
-  return saved;
+  return rowToRosterCharacter(saved);
 }

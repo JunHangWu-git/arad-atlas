@@ -9,7 +9,7 @@ import {
 import { parseEquipment, parseAvatars, parseCreature, parseStatusList } from "@/lib/gear";
 import { Section } from "./section";
 import { RefreshButton } from "./refresh-button";
-import { FameChart } from "./fame-chart";
+import { FameChart } from "./fame-chart-lazy";
 import { EquipmentList } from "./equipment-list";
 import { ItemIconStrip } from "./item-icons";
 
