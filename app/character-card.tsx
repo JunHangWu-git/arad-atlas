@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Sprout } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { RosterCharacter } from "@/lib/roster";
 import { classArtUrl } from "@/lib/neople/portrait";
+import { setTierColor } from "@/lib/rarity";
+import { setIconUrl } from "@/lib/set-icon";
 import { CharacterCardMenu } from "./character-card-menu";
 import { CardPortrait } from "./card-portrait";
 
@@ -33,8 +34,8 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
 
   return (
     <div className="relative group">
-      <Link href={`/characters/${c.id}`} className="block">
-        <Card className="relative overflow-hidden bg-black transition-transform transition-colors hover:-translate-y-0.5 hover:border-[var(--tier-fine)]">
+      <Link href={`/characters/${c.id}`} draggable={false} className="block">
+        <Card className="relative overflow-hidden bg-black transition-transform transition-colors group-hover/cell:-translate-y-0.5 group-hover/cell:border-[var(--tier-fine)]">
           {/* Faint full-card class art behind everything; a dark gradient keeps
               the body text legible over it. */}
           {classArt && (
@@ -78,10 +79,11 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
               {c.characterName}
             </p>
             {jobGrow && (
-              <p className="max-w-full truncate text-xs font-medium">
-                <span style={{ color: "var(--fame)" }}>
-                  [{c.jobGrowName ?? c.jobName}]
-                </span>
+              <p
+                className="max-w-full truncate text-xs font-medium"
+                style={{ color: "#C8B878" }}
+              >
+                [{c.jobGrowName ?? c.jobName}]
               </p>
             )}
             {/* Fame — DFO-style fame readout: gold mark + compact sans number,
@@ -108,12 +110,23 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
                 + current set-point total in parentheses. Hidden until a gear
                 snapshot exists. */}
             {c.equipmentSet && (
-              <div className="flex items-center gap-1 text-xs leading-none">
-                <Sprout className="size-3.5 shrink-0" style={{ color: "var(--set)" }} aria-hidden />
-                <span className="max-w-full truncate font-medium" style={{ color: "var(--set)" }}>
+              <div
+                className="flex items-center gap-1 text-xs leading-none"
+                style={{ color: setTierColor(c.equipmentSet.rarityName) }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- external dfogang CDN icon, no next/image optimization */}
+                <img
+                  src={setIconUrl(c.equipmentSet.name)}
+                  width={14}
+                  height={14}
+                  alt=""
+                  aria-hidden
+                  className="size-3.5 shrink-0"
+                />
+                <span className="max-w-full truncate font-medium">
                   {c.equipmentSet.name}
                   {c.equipmentSet.setPoint != null && (
-                    <span className="ml-1 tabular-nums text-muted-foreground">
+                    <span className="ml-1 tabular-nums">
                       ({c.equipmentSet.setPoint})
                     </span>
                   )}
@@ -124,7 +137,7 @@ export function CharacterCard({ character: c }: CharacterCardProps) {
         </Card>
       </Link>
       {/* Sibling of the Link (not nested) so menu clicks never navigate. */}
-      <div className="absolute bottom-2.5 right-2.5">
+      <div className="absolute right-2.5 top-2.5 z-10">
         <CharacterCardMenu id={c.id} />
       </div>
     </div>
