@@ -62,7 +62,7 @@ export function EquipmentList({ rows }: EquipmentListProps) {
                   {row.reinforce > 0 && (
                     <span
                       className="mr-1 font-mono font-semibold"
-                      style={{ color: amped ? "var(--tier-fine)" : "var(--fame)" }}
+                      style={{ color: amped ? "var(--amp)" : "var(--reinforce)" }}
                       title={row.amplificationName ?? "Reinforce"}
                     >
                       +{row.reinforce}

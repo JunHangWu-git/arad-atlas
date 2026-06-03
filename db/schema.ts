@@ -128,3 +128,15 @@ export const snapshotLock = sqliteTable("snapshot_lock", {
   characterFk: text("character_fk").primaryKey(),
   expiresAt: integer("expires_at").notNull(), // unix ms
 });
+
+// Manual, user-editable progression annotations per character. The progression
+// matrix derives most columns automatically from gear/fame snapshots; these two
+// fields are the human judgment the spreadsheet kept by hand (优先度 / 提升).
+export const progressionNote = sqliteTable("progression_note", {
+  characterFk: text("character_fk")
+    .primaryKey()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  priority: integer("priority"), // manual rank; lower = higher priority, null = unset
+  note: text("note"), // freeform "what to improve next" text
+  updatedAt: integer("updated_at"), // unix ms
+});

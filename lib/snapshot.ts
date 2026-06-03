@@ -404,6 +404,62 @@ export async function getLatestEquipmentByCharacter(): Promise<
   return map;
 }
 
+/** The latest gear blobs the progression matrix reads, per character. */
+export interface LatestGearBlobs {
+  equipment: unknown;
+  buffEquipment: unknown;
+  avatar: unknown;
+  creature: unknown;
+}
+
+/** Raw latest gear blobs (equipment + buffEquipment + avatar + creature) per
+ *  character, keyed by characters.id. One grouped query (never per-character) to
+ *  dodge an N+1 on the progression matrix. Callers parse the blobs themselves
+ *  (see lib/progression). Characters without a gear snapshot are absent. */
+export async function getLatestGearBlobsByCharacter(): Promise<
+  Map<string, LatestGearBlobs>
+> {
+  const result = await db.run(
+    sql`
+      SELECT g.character_fk AS characterFk,
+             g.equipment AS equipment,
+             g.buff_equipment AS buffEquipment,
+             g.avatar AS avatar,
+             g.creature AS creature
+      FROM gear_snapshot g
+      JOIN (
+        SELECT character_fk, MAX(captured_at) AS mx
+        FROM gear_snapshot
+        GROUP BY character_fk
+      ) latest
+        ON g.character_fk = latest.character_fk
+       AND g.captured_at = latest.mx
+    `,
+  );
+
+  const parseCol = (v: unknown): unknown =>
+    safeParse(typeof v === "string" ? v : null);
+
+  const map = new Map<string, LatestGearBlobs>();
+  for (const row of result.rows ?? []) {
+    const r = row as {
+      characterFk?: unknown;
+      equipment?: unknown;
+      buffEquipment?: unknown;
+      avatar?: unknown;
+      creature?: unknown;
+    };
+    if (typeof r.characterFk !== "string") continue;
+    map.set(r.characterFk, {
+      equipment: parseCol(r.equipment),
+      buffEquipment: parseCol(r.buffEquipment),
+      avatar: parseCol(r.avatar),
+      creature: parseCol(r.creature),
+    });
+  }
+  return map;
+}
+
 export async function getAllCharacterIds(): Promise<string[]> {
   const rows = await db.select({ id: characters.id }).from(characters);
   return rows.map((r) => r.id);

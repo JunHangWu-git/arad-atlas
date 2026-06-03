@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { listRosterWithFame } from "@/lib/roster";
 import { getSnapshotHealth } from "@/lib/snapshot";
 import { Badge } from "@/components/ui/badge";
@@ -42,12 +41,6 @@ export default async function Home() {
         <div className="ml-auto flex items-center gap-4">
           <AddCharacterForm />
           {roster.length > 0 && <RefreshAllButton />}
-          <Link
-            href="/guides"
-            className="text-sm text-muted-foreground hover:underline"
-          >
-            Guides →
-          </Link>
         </div>
       </div>
 
