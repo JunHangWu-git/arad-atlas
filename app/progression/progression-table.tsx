@@ -235,14 +235,12 @@ function ProgressionTableRow({ row }: { row: ProgressionRow }) {
 
       <TableCell>
         {setShort ? (
-          <div className="flex items-baseline gap-2">
+          <div
+            className="flex items-baseline gap-2 font-mono text-xs"
+            style={{ color: setTierColor(row.setRarityName) }}
+          >
             <span title={row.setName ?? undefined}>{setShort}</span>
-            <span
-              className="font-mono text-xs"
-              style={{ color: setTierColor(row.setRarityName) }}
-            >
-              {row.setPoint.label}
-            </span>
+            <span>{row.setPoint.label}</span>
           </div>
         ) : (
           <span className="text-muted-foreground">—</span>
