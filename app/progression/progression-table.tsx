@@ -229,7 +229,7 @@ function ProgressionTableRow({ row }: { row: ProgressionRow }) {
         )}
       </TableCell>
 
-      <TableCell className="text-right font-mono tabular-nums text-fame">
+      <TableCell className="text-right font-mono tabular-nums text-foreground">
         {row.fame != null ? row.fame.toLocaleString() : "—"}
       </TableCell>
 
