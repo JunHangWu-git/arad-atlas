@@ -195,6 +195,18 @@ interface SlotItem {
   itemName: string | null;
 }
 
+type ProgressionNoteRow = typeof progressionNote.$inferSelect;
+
+/** Read all manual note rows. Degrades to empty if the table does not exist yet
+ *  (e.g. a deploy whose migration has not run), so the matrix still renders. */
+async function listProgressionNotes(): Promise<ProgressionNoteRow[]> {
+  try {
+    return await db.select().from(progressionNote);
+  } catch {
+    return [];
+  }
+}
+
 /** Pull the equipped title / aura / creature item ids + names from gear blobs. */
 function cosmeticSlotItems(blobs: Partial<LatestGearBlobs>): {
   title: SlotItem;
@@ -225,7 +237,7 @@ export async function listProgression(): Promise<ProgressionRow[]> {
     listRoster(),
     getLatestFameByCharacter(),
     getLatestGearBlobsByCharacter(),
-    db.select().from(progressionNote),
+    listProgressionNotes(),
   ]);
 
   const noteByChar = new Map(notes.map((n) => [n.characterFk, n]));

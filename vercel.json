@@ -1,5 +1,5 @@
 {
-  "buildCommand": "if [ \"$VERCEL_ENV\" = production ]; then npm run db:migrate; fi && next build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = production ] || [ \"$VERCEL_ENV\" = preview ]; then npm run db:migrate; fi && next build",
   "crons": [
     { "path": "/api/cron/snapshot-all", "schedule": "0 8 * * *" }
   ]
