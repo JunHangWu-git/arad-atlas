@@ -39,7 +39,7 @@ function EquipCell({ row }: EquipCellProps) {
       {row.reinforce > 0 && (
         <span
           className="absolute -left-1 -top-1 rounded px-1 font-mono text-[10px] font-bold leading-tight text-white shadow"
-          style={{ backgroundColor: amped ? "var(--tier-legend)" : "var(--tier-fine)" }}
+          style={{ backgroundColor: amped ? "var(--amp)" : "var(--reinforce)" }}
         >
           +{row.reinforce}
         </span>

@@ -20,6 +20,10 @@
 
   /* Equipment-set accent (dfogang-style green set-point readout) */
   --set: #4ade80;
+
+  /* Gear enhancement accents: reinforce (blue) vs amplify (pink/magenta) */
+  --reinforce: var(--tier-fine);
+  --amp: #ff4fc3;
 }
 
 @theme inline {
