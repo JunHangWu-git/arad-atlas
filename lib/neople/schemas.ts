@@ -295,6 +295,8 @@ export const itemSchema = z
     setItemId: z.string().nullable().optional(),
     setItemName: z.string().nullable().optional(),
     itemStatus: z.array(statEntrySchema).optional(),
+    itemExplain: z.string().optional(),
+    itemExplainDetail: z.string().optional(),
   })
   .passthrough();
 export type Item = z.infer<typeof itemSchema>;

@@ -33,6 +33,31 @@ const SET_CATEGORIES = [
   "Tales",
 ] as const;
 
+// The matched keyword for a set name (e.g. "Paradise of Dazzling Gold Set" ->
+// "Gold"). Shares the special-mapping + category logic with setIconUrl so the
+// short label and the icon always agree. Returns null when nothing matches.
+function matchSetKeyword(setName: string): string | null {
+  for (const [match, icon] of SET_SPECIAL_MAPPINGS) {
+    if (setName.includes(match)) return icon;
+  }
+  for (const category of SET_CATEGORIES) {
+    if (setName.includes(category)) return category;
+  }
+  return null;
+}
+
+/**
+ * Short label for an equipment set, e.g. "Paradise of Dazzling Gold Set" ->
+ * "Gold". Falls back to the full name when no keyword matches, and null for
+ * empty input.
+ */
+export function setShortLabel(
+  setName: string | null | undefined,
+): string | null {
+  if (!setName) return null;
+  return matchSetKeyword(setName) ?? setName;
+}
+
 // Module-level memo cache keyed by raw setName input. Null/undefined/empty
 // strings are never stored — the fast-path guard returns before the cache is
 // consulted, preserving those edge-case semantics exactly.
